@@ -1,18 +1,18 @@
 import { Operation, Document, FIDEICOMISO_TEMPLATES, DocCategory } from '@/types';
 
-// Initial operation: Coral and Sandy
+// Operations with background images and alfanumeric 6-digit PINs
 const INITIAL_OPERATIONS: Operation[] = [
   {
     id: 'op-001',
     nombre: 'Coral and Sandy',
     tipo: 'fideicomiso',
-    pin: '2468',
+    pin: 'CS2026',
     fecha_creacion: '2026-02-06',
     status: 'activa',
+    imagen_fondo: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&q=80',
   },
 ];
 
-// Generate documents from templates for the initial operation
 const INITIAL_DOCUMENTS: Document[] = FIDEICOMISO_TEMPLATES.map((t, i) => ({
   id: `doc-${String(i + 1).padStart(3, '0')}`,
   operacion_id: 'op-001',
@@ -24,9 +24,11 @@ const INITIAL_DOCUMENTS: Document[] = FIDEICOMISO_TEMPLATES.map((t, i) => ({
   fecha_subida: null,
 }));
 
-// In-memory store (will be replaced by Supabase)
 const operations = [...INITIAL_OPERATIONS];
 const documents = [...INITIAL_DOCUMENTS];
+
+// Admin PIN - alfanumeric 6 digits
+export const ADMIN_PIN = 'ADM926';
 
 export function getOperations(): Operation[] {
   return operations;
@@ -36,9 +38,17 @@ export function getOperation(id: string): Operation | undefined {
   return operations.find((op) => op.id === id);
 }
 
+export function findOperationByPin(pin: string): Operation | undefined {
+  return operations.find((o) => o.pin.toUpperCase() === pin.toUpperCase());
+}
+
+export function isAdminPin(pin: string): boolean {
+  return pin.toUpperCase() === ADMIN_PIN.toUpperCase();
+}
+
 export function verifyPin(operationId: string, pin: string): boolean {
   const op = operations.find((o) => o.id === operationId);
-  return op?.pin === pin;
+  return op?.pin.toUpperCase() === pin.toUpperCase();
 }
 
 export function getDocuments(operationId: string): Document[] {
@@ -64,6 +74,3 @@ export function markDocumentUploaded(docId: string, url: string): void {
     doc.fecha_subida = new Date().toISOString();
   }
 }
-
-// Admin PIN
-export const ADMIN_PIN = '0000';

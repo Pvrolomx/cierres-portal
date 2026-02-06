@@ -20,6 +20,13 @@ export const CATEGORY_LABELS: Record<DocCategory, string> = {
   transaccion: 'Transacción',
 };
 
+export const CATEGORY_ICONS: Record<DocCategory, string> = {
+  comprador: '👤',
+  vendedor: '🏠',
+  propiedad: '📐',
+  transaccion: '📝',
+};
+
 export interface Operation {
   id: string;
   nombre: string;
@@ -27,6 +34,7 @@ export interface Operation {
   pin: string;
   fecha_creacion: string;
   status: 'activa' | 'cerrada';
+  imagen_fondo?: string;
 }
 
 export interface Document {
@@ -48,7 +56,6 @@ export interface Template {
   requerido: boolean;
 }
 
-// Templates for Constitución de Fideicomiso
 export const FIDEICOMISO_TEMPLATES: Omit<Template, 'id'>[] = [
   // Comprador
   { tipo_operacion: 'fideicomiso', categoria: 'comprador', nombre_doc: 'Pasaporte vigente', requerido: true },
