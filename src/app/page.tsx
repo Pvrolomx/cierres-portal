@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, createContext, useContext } from "react";
+import { useState, useEffect, createContext, useContext, useCallback } from "react";
 import {
   Operation, OPERATION_LABELS, DocCategory, CATEGORY_LABELS, CATEGORY_ICONS,
   Document, Lang, Party, PARTY_ROLE_LABELS, PARTY_TYPE_LABELS,
 } from "@/types";
 import {
   getOperations, getProgress, findOperationByPin, isAdminPin,
-  markDocumentUploaded, getPartyDocs, getGeneralDocs, getPartyProgress,
+  uploadDocument, getPartyDocs, getGeneralDocs, getPartyProgress, ensureDocs,
 } from "@/lib/store";
 
 const LangContext = createContext<{ lang: Lang; toggle: () => void }>({ lang: "es", toggle: () => {} });
@@ -28,6 +28,8 @@ const UI: Record<string, { es: string; en: string }> = {
   activeOps: { es: "operaciones activas", en: "active closings" },
   empresa: { es: "Empresa", en: "Company" },
   apoderado: { es: "Apoderado", en: "Attorney-in-fact" },
+  loading: { es: "Cargando...", en: "Loading..." },
+  uploading: { es: "Subiendo...", en: "Uploading..." },
 };
 function t(key: string, lang: Lang): string { return UI[key]?.[lang] || key; }
 
@@ -48,17 +50,20 @@ function PinEntry({ onAccess }: { onAccess: (op: Operation | "admin", alsoAdmin?
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [shaking, setShaking] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (pin.length < 4) return;
-    const op = findOperationByPin(pin);
+    setLoading(true);
     const admin = isAdminPin(pin);
-    if (op) { onAccess(op, admin); return; }
-    if (admin) { onAccess("admin"); return; }
-    if (op) { onAccess(op); } else {
+    const op = await findOperationByPin(pin);
+    if (op) { onAccess(op, admin); }
+    else if (admin) { onAccess("admin"); }
+    else {
       setError(t("invalidPin", lang)); setShaking(true);
       setTimeout(() => setShaking(false), 500); setPin("");
     }
+    setLoading(false);
   };
 
   return (
@@ -78,9 +83,9 @@ function PinEntry({ onAccess }: { onAccess: (op: Operation | "admin", alsoAdmin?
             placeholder={lang === "es" ? "Código de acceso" : "Access code"} maxLength={6}
             className="w-full text-center text-2xl font-mono tracking-[0.5em] py-4 px-6 border-2 border-gray-200 rounded-xl focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/20 outline-none transition-all bg-white placeholder:tracking-normal placeholder:text-base placeholder:text-gray-300" autoFocus />
           {error && <p className="text-red-500 text-sm text-center mt-3">{error}</p>}
-          <button onClick={handleSubmit} disabled={pin.length < 4}
+          <button onClick={handleSubmit} disabled={pin.length < 4 || loading}
             className="w-full mt-4 py-3.5 bg-[#1e3a5f] text-white rounded-xl font-medium text-sm disabled:opacity-30 hover:bg-[#2a4d7a] transition-all shadow-lg shadow-[#1e3a5f]/20">
-            {t("accessBtn", lang)}
+            {loading ? t("loading", lang) : t("accessBtn", lang)}
           </button>
         </div>
         <p className="text-center text-xs text-gray-400 mt-8">{t("accessHelp", lang)}</p>
@@ -89,10 +94,20 @@ function PinEntry({ onAccess }: { onAccess: (op: Operation | "admin", alsoAdmin?
   );
 }
 
-/* ─── Doc Row ─── */
-function DocRow({ doc, onUpload }: { doc: Document; onUpload: (id: string) => void }) {
+/* ─── Doc Row with real upload ─── */
+function DocRow({ doc, onUpload }: { doc: Document; onUpload: (id: string, file: File) => void }) {
   const { lang } = useLang();
+  const [uploading, setUploading] = useState(false);
   const hasFile = doc.archivo_url !== null;
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    await onUpload(doc.id, file);
+    setUploading(false);
+  };
+
   return (
     <div className="flex items-center gap-3 py-3 px-4 border-b border-gray-100 last:border-0 hover:bg-gray-50/50 transition-colors">
       <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs flex-shrink-0 ${hasFile ? "bg-emerald-100 text-emerald-600" : "bg-red-50 text-red-400"}`}>
@@ -104,25 +119,44 @@ function DocRow({ doc, onUpload }: { doc: Document; onUpload: (id: string) => vo
         {!doc.requerido && !hasFile && <p className="text-xs text-amber-500 mt-0.5">{t("optional", lang)}</p>}
       </div>
       {hasFile ? (
-        <button className="text-xs text-gray-500 hover:text-[#1e3a5f] px-3 py-1.5 rounded-lg border border-gray-200 hover:border-[#1e3a5f] transition-colors">{t("view", lang)}</button>
+        <a href={doc.archivo_url || "#"} target="_blank" rel="noopener noreferrer"
+          className="text-xs text-gray-500 hover:text-[#1e3a5f] px-3 py-1.5 rounded-lg border border-gray-200 hover:border-[#1e3a5f] transition-colors">
+          {t("view", lang)}
+        </a>
       ) : (
-        <button onClick={() => onUpload(doc.id)} className="text-xs bg-[#1e3a5f] hover:bg-[#2a4d7a] text-white px-3 py-1.5 rounded-lg transition-colors shadow-sm">{t("upload", lang)}</button>
+        <label className={`text-xs px-3 py-1.5 rounded-lg transition-colors shadow-sm cursor-pointer ${uploading ? "bg-gray-300 text-gray-500" : "bg-[#1e3a5f] hover:bg-[#2a4d7a] text-white"}`}>
+          {uploading ? t("uploading", lang) : t("upload", lang)}
+          <input type="file" className="hidden" onChange={handleFileSelect} disabled={uploading} />
+        </label>
       )}
     </div>
   );
 }
 
 /* ─── Party Section ─── */
-function PartySection({ party, operationId, onUpload }: { party: Party; operationId: string; onUpload: (id: string) => void }) {
+function PartySection({ party, operationId, onRefresh }: { party: Party; operationId: string; onRefresh: () => void }) {
   const { lang } = useLang();
   const [open, setOpen] = useState(true);
-  const docs = getPartyDocs(operationId, party.id);
-  const prog = getPartyProgress(operationId, party.id);
-  const allDone = prog.completed === prog.total;
+  const [docs, setDocs] = useState<Document[]>([]);
+  const [prog, setProg] = useState({ total: 0, completed: 0, percent: 0 });
 
-  const icon = party.tipo === 'moral' ? '🏢' : (party.rol === 'comprador' ? '👤' : '🏠');
-  const roleLabel = PARTY_ROLE_LABELS[party.rol][lang];
-  const typeLabel = PARTY_TYPE_LABELS[party.tipo][lang];
+  const loadDocs = useCallback(async () => {
+    const d = await getPartyDocs(operationId, party.id);
+    setDocs(d);
+    const p = await getPartyProgress(operationId, party.id);
+    setProg(p);
+  }, [operationId, party.id]);
+
+  useEffect(() => { loadDocs(); }, [loadDocs]);
+
+  const handleUpload = async (docId: string, file: File) => {
+    await uploadDocument(docId, file);
+    await loadDocs();
+    onRefresh();
+  };
+
+  const icon = party.tipo === "moral" ? "🏢" : party.rol === "comprador" ? "👤" : "🏠";
+  const allDone = prog.completed === prog.total && prog.total > 0;
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-3 overflow-hidden">
@@ -131,48 +165,55 @@ function PartySection({ party, operationId, onUpload }: { party: Party; operatio
           <span className="text-lg">{icon}</span>
           <div className="text-left">
             <span className="text-sm font-semibold text-gray-800">{party.nombre}</span>
-            <span className="text-xs text-gray-400 ml-2">{roleLabel} · {typeLabel}</span>
+            <span className="text-xs text-gray-400 ml-2">{PARTY_ROLE_LABELS[party.rol][lang]} · {PARTY_TYPE_LABELS[party.tipo][lang]}</span>
           </div>
-          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${allDone ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
-            {prog.completed}/{prog.total}
-          </span>
+          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${allDone ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>{prog.completed}/{prog.total}</span>
         </div>
         <span className={`text-gray-400 transition-transform text-xs ${open ? "rotate-180" : ""}`}>▼</span>
       </button>
       {open && (
         <div className="border-t border-gray-100">
-          {party.tipo === 'moral' && (
+          {party.tipo === "moral" ? (
             <>
               <div className="px-5 py-2 bg-blue-50/50 border-b border-gray-100">
                 <span className="text-xs font-semibold text-[#1e3a5f]">🏢 {t("empresa", lang)}</span>
               </div>
-              {docs.filter(d => !d.nombre_doc.es.startsWith('(Apoderado)')).map(doc => (
-                <DocRow key={doc.id} doc={doc} onUpload={onUpload} />
-              ))}
+              {docs.filter(d => !d.nombre_doc.es.startsWith("(Apoderado)")).map(doc => <DocRow key={doc.id} doc={doc} onUpload={handleUpload} />)}
               <div className="px-5 py-2 bg-amber-50/50 border-b border-t border-gray-100">
                 <span className="text-xs font-semibold text-amber-700">👤 {t("apoderado", lang)}</span>
               </div>
-              {docs.filter(d => d.nombre_doc.es.startsWith('(Apoderado)')).map(doc => (
-                <DocRow key={doc.id} doc={doc} onUpload={onUpload} />
-              ))}
+              {docs.filter(d => d.nombre_doc.es.startsWith("(Apoderado)")).map(doc => <DocRow key={doc.id} doc={doc} onUpload={handleUpload} />)}
             </>
+          ) : (
+            docs.map(doc => <DocRow key={doc.id} doc={doc} onUpload={handleUpload} />)
           )}
-          {party.tipo === 'fisica' && docs.map(doc => (
-            <DocRow key={doc.id} doc={doc} onUpload={onUpload} />
-          ))}
         </div>
       )}
     </div>
   );
 }
 
-/* ─── General Category Section ─── */
-function GeneralSection({ operationId, categoria, onUpload }: { operationId: string; categoria: DocCategory; onUpload: (id: string) => void }) {
+/* ─── General Section ─── */
+function GeneralSection({ operationId, categoria, onRefresh }: { operationId: string; categoria: DocCategory; onRefresh: () => void }) {
   const { lang } = useLang();
   const [open, setOpen] = useState(true);
-  const docs = getGeneralDocs(operationId, categoria);
+  const [docs, setDocs] = useState<Document[]>([]);
+
+  const loadDocs = useCallback(async () => {
+    const d = await getGeneralDocs(operationId, categoria);
+    setDocs(d);
+  }, [operationId, categoria]);
+
+  useEffect(() => { loadDocs(); }, [loadDocs]);
+
+  const handleUpload = async (docId: string, file: File) => {
+    await uploadDocument(docId, file);
+    await loadDocs();
+    onRefresh();
+  };
+
   const completed = docs.filter(d => d.archivo_url !== null).length;
-  const allDone = completed === docs.length;
+  const allDone = completed === docs.length && docs.length > 0;
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-3 overflow-hidden">
@@ -184,7 +225,7 @@ function GeneralSection({ operationId, categoria, onUpload }: { operationId: str
         </div>
         <span className={`text-gray-400 transition-transform text-xs ${open ? "rotate-180" : ""}`}>▼</span>
       </button>
-      {open && <div className="border-t border-gray-100">{docs.map(doc => <DocRow key={doc.id} doc={doc} onUpload={onUpload} />)}</div>}
+      {open && <div className="border-t border-gray-100">{docs.map(doc => <DocRow key={doc.id} doc={doc} onUpload={handleUpload} />)}</div>}
     </div>
   );
 }
@@ -192,22 +233,31 @@ function GeneralSection({ operationId, categoria, onUpload }: { operationId: str
 /* ─── Operation Dashboard ─── */
 function OperationDashboard({ operation, onLogout, isAdmin, onGoAdmin }: { operation: Operation; onLogout: () => void; isAdmin?: boolean; onGoAdmin?: () => void }) {
   const { lang } = useLang();
-  const [, setRefresh] = useState(0);
-  const progress = getProgress(operation.id);
+  const [progress, setProgress] = useState({ total: 0, completed: 0, percent: 0 });
+  const [ready, setReady] = useState(false);
   const generalCats: DocCategory[] = ["cierre", "notario", "escrow"];
 
-  const handleUpload = (docId: string) => {
-    markDocumentUploaded(docId, `https://storage.example.com/${docId}`);
-    setRefresh(r => r + 1);
+  useEffect(() => {
+    (async () => {
+      await ensureDocs(operation);
+      const p = await getProgress(operation.id);
+      setProgress(p);
+      setReady(true);
+    })();
+  }, [operation]);
+
+  const refreshProgress = async () => {
+    const p = await getProgress(operation.id);
+    setProgress(p);
   };
 
-  // Group parties by role
-  const compradores = operation.partes.filter(p => p.rol === 'comprador');
-  const vendedores = operation.partes.filter(p => p.rol === 'vendedor');
+  const compradores = operation.partes.filter(p => p.rol === "comprador");
+  const vendedores = operation.partes.filter(p => p.rol === "vendedor");
+
+  if (!ready) return <div className="text-center py-20 text-gray-400">{t("loading", lang)}</div>;
 
   return (
     <div>
-      {/* Hero */}
       <div className="relative rounded-2xl overflow-hidden mb-6 shadow-lg">
         {operation.imagen_fondo ? (
           <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${operation.imagen_fondo})` }} />
@@ -237,29 +287,20 @@ function OperationDashboard({ operation, onLogout, isAdmin, onGoAdmin }: { opera
         </div>
       </div>
 
-      {/* Compradores */}
       {compradores.length > 0 && (
         <div className="mb-1">
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">
-            {PARTY_ROLE_LABELS.comprador[lang]}{compradores.length > 1 ? "s" : ""}
-          </h3>
-          {compradores.map(p => <PartySection key={p.id} party={p} operationId={operation.id} onUpload={handleUpload} />)}
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">{PARTY_ROLE_LABELS.comprador[lang]}{compradores.length > 1 ? "s" : ""}</h3>
+          {compradores.map(p => <PartySection key={p.id} party={p} operationId={operation.id} onRefresh={refreshProgress} />)}
         </div>
       )}
-
-      {/* Vendedores */}
       {vendedores.length > 0 && (
         <div className="mb-1 mt-4">
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">
-            {PARTY_ROLE_LABELS.vendedor[lang]}{vendedores.length > 1 ? (lang === "es" ? "es" : "s") : ""}
-          </h3>
-          {vendedores.map(p => <PartySection key={p.id} party={p} operationId={operation.id} onUpload={handleUpload} />)}
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">{PARTY_ROLE_LABELS.vendedor[lang]}{vendedores.length > 1 ? (lang === "es" ? "es" : "s") : ""}</h3>
+          {vendedores.map(p => <PartySection key={p.id} party={p} operationId={operation.id} onRefresh={refreshProgress} />)}
         </div>
       )}
-
-      {/* General sections */}
       <div className="mt-4">
-        {generalCats.map(cat => <GeneralSection key={cat} operationId={operation.id} categoria={cat} onUpload={handleUpload} />)}
+        {generalCats.map(cat => <GeneralSection key={cat} operationId={operation.id} categoria={cat} onRefresh={refreshProgress} />)}
       </div>
     </div>
   );
@@ -268,7 +309,24 @@ function OperationDashboard({ operation, onLogout, isAdmin, onGoAdmin }: { opera
 /* ─── Admin Panel ─── */
 function AdminPanel({ onSelect, onLogout }: { onSelect: (op: Operation) => void; onLogout: () => void }) {
   const { lang } = useLang();
-  const operations = getOperations();
+  const [operations, setOperations] = useState<Operation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [progresses, setProgresses] = useState<Record<string, { total: number; completed: number; percent: number }>>({});
+
+  useEffect(() => {
+    (async () => {
+      const ops = await getOperations();
+      setOperations(ops);
+      const progs: Record<string, { total: number; completed: number; percent: number }> = {};
+      for (const op of ops) {
+        progs[op.id] = await getProgress(op.id);
+      }
+      setProgresses(progs);
+      setLoading(false);
+    })();
+  }, []);
+
+  if (loading) return <div className="text-center py-20 text-gray-400">{t("loading", lang)}</div>;
 
   return (
     <div>
@@ -284,7 +342,7 @@ function AdminPanel({ onSelect, onLogout }: { onSelect: (op: Operation) => void;
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         {operations.map(op => {
-          const prog = getProgress(op.id);
+          const prog = progresses[op.id] || { percent: 0 };
           return (
             <button key={op.id} onClick={() => onSelect(op)} className="text-left bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md hover:border-gray-200 transition-all group">
               <div className="relative h-32 overflow-hidden">

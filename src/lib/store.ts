@@ -1,164 +1,168 @@
 import {
-  Operation, Document, Party,
+  Operation, Document, Party, DocCategory,
   PERSONA_FISICA_DOCS, PERSONA_MORAL_EMPRESA_DOCS, PERSONA_MORAL_APODERADO_DOCS,
   CIERRE_DOCS, NOTARIO_DOCS, ESCROW_DOCS,
-  DocCategory,
 } from '@/types';
+import { supabase } from './supabase';
 
-// Helper to generate docs for a party
-function generatePartyDocs(operacionId: string, party: Party, startIdx: number): Document[] {
-  const docs: Document[] = [];
-  let idx = startIdx;
-
-  if (party.tipo === 'fisica') {
-    for (const d of PERSONA_FISICA_DOCS) {
-      docs.push({
-        id: `doc-${operacionId}-${party.id}-${idx++}`,
-        operacion_id: operacionId,
-        party_id: party.id,
-        categoria: null,
-        nombre_doc: d.nombre,
-        requerido: d.requerido,
-        archivo_url: null,
-        subido_por: null,
-        fecha_subida: null,
-      });
-    }
-  } else {
-    // Persona Moral: empresa docs
-    for (const d of PERSONA_MORAL_EMPRESA_DOCS) {
-      docs.push({
-        id: `doc-${operacionId}-${party.id}-emp-${idx++}`,
-        operacion_id: operacionId,
-        party_id: party.id,
-        categoria: null,
-        nombre_doc: d.nombre,
-        requerido: d.requerido,
-        archivo_url: null,
-        subido_por: null,
-        fecha_subida: null,
-      });
-    }
-    // Persona Moral: apoderado docs
-    for (const d of PERSONA_MORAL_APODERADO_DOCS) {
-      docs.push({
-        id: `doc-${operacionId}-${party.id}-apo-${idx++}`,
-        operacion_id: operacionId,
-        party_id: party.id,
-        categoria: null,
-        nombre_doc: { es: `(Apoderado) ${d.nombre.es}`, en: `(Attorney) ${d.nombre.en}` },
-        requerido: d.requerido,
-        archivo_url: null,
-        subido_por: null,
-        fecha_subida: null,
-      });
-    }
-  }
-  return docs;
-}
-
-function generateGeneralDocs(operacionId: string, categoria: DocCategory, templates: { nombre: { es: string; en: string }; requerido: boolean }[], startIdx: number): Document[] {
-  return templates.map((d, i) => ({
-    id: `doc-${operacionId}-${categoria}-${startIdx + i}`,
-    operacion_id: operacionId,
-    party_id: null,
-    categoria,
-    nombre_doc: d.nombre,
-    requerido: d.requerido,
-    archivo_url: null,
-    subido_por: null,
-    fecha_subida: null,
-  }));
-}
-
-// Example: Coral and Sandy with dynamic parties
-const CORAL_SANDY_PARTIES: Party[] = [
-  { id: 'p1', nombre: 'Coral', rol: 'comprador', tipo: 'fisica' },
-  { id: 'p2', nombre: 'Sandy', rol: 'comprador', tipo: 'fisica' },
-  { id: 'p3', nombre: 'Eco Inmuebles de la Bahía, S. de R.L. de C.V.', rol: 'vendedor', tipo: 'moral' },
-];
-
-const INITIAL_OPERATIONS: Operation[] = [
-  {
-    id: 'op-001',
-    nombre: 'Coral and Sandy',
-    tipo: 'fideicomiso',
-    pin: '143414',
-    fecha_creacion: '2026-02-06',
-    status: 'activa',
-    imagen_fondo: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&q=80',
-    partes: CORAL_SANDY_PARTIES,
-  },
-];
-
-// Generate all documents
-function buildAllDocs(): Document[] {
-  const allDocs: Document[] = [];
-  let idx = 0;
-
-  for (const op of INITIAL_OPERATIONS) {
-    // Party docs
-    for (const party of op.partes) {
-      const partyDocs = generatePartyDocs(op.id, party, idx);
-      allDocs.push(...partyDocs);
-      idx += partyDocs.length;
-    }
-    // General docs
-    allDocs.push(...generateGeneralDocs(op.id, 'cierre', CIERRE_DOCS, idx)); idx += CIERRE_DOCS.length;
-    allDocs.push(...generateGeneralDocs(op.id, 'notario', NOTARIO_DOCS, idx)); idx += NOTARIO_DOCS.length;
-    allDocs.push(...generateGeneralDocs(op.id, 'escrow', ESCROW_DOCS, idx)); idx += ESCROW_DOCS.length;
-  }
-  return allDocs;
-}
-
-const operations = [...INITIAL_OPERATIONS];
-const documents = buildAllDocs();
+// ─── Supabase-backed store ───
 
 export const ADMIN_PIN = '143414';
-
-export function getOperations(): Operation[] {
-  return operations;
-}
-
-export function findOperationByPin(pin: string): Operation | undefined {
-  return operations.find((o) => o.pin.toUpperCase() === pin.toUpperCase());
-}
 
 export function isAdminPin(pin: string): boolean {
   return pin.toUpperCase() === ADMIN_PIN.toUpperCase();
 }
 
-export function getPartyDocs(operationId: string, partyId: string): Document[] {
-  return documents.filter((d) => d.operacion_id === operationId && d.party_id === partyId);
-}
+// Fetch all operations
+export async function getOperations(): Promise<Operation[]> {
+  if (!supabase) return [];
+  const { data: ops } = await supabase.from('operaciones').select('*').order('created_at', { ascending: false });
+  if (!ops) return [];
 
-export function getGeneralDocs(operationId: string, categoria: DocCategory): Document[] {
-  return documents.filter((d) => d.operacion_id === operationId && d.categoria === categoria && d.party_id === null);
-}
-
-export function getAllDocs(operationId: string): Document[] {
-  return documents.filter((d) => d.operacion_id === operationId);
-}
-
-export function getProgress(operationId: string): { total: number; completed: number; percent: number } {
-  const docs = documents.filter((d) => d.operacion_id === operationId && d.requerido);
-  const completed = docs.filter((d) => d.archivo_url !== null);
-  const percent = docs.length > 0 ? Math.round((completed.length / docs.length) * 100) : 0;
-  return { total: docs.length, completed: completed.length, percent };
-}
-
-export function getPartyProgress(operationId: string, partyId: string): { total: number; completed: number; percent: number } {
-  const docs = documents.filter((d) => d.operacion_id === operationId && d.party_id === partyId && d.requerido);
-  const completed = docs.filter((d) => d.archivo_url !== null);
-  const percent = docs.length > 0 ? Math.round((completed.length / docs.length) * 100) : 0;
-  return { total: docs.length, completed: completed.length, percent };
-}
-
-export function markDocumentUploaded(docId: string, url: string): void {
-  const doc = documents.find((d) => d.id === docId);
-  if (doc) {
-    doc.archivo_url = url;
-    doc.subido_por = 'usuario';
-    doc.fecha_subida = new Date().toISOString();
+  // Fetch parties for each operation
+  const result: Operation[] = [];
+  for (const op of ops) {
+    const { data: partes } = await supabase.from('partes').select('*').eq('operacion_id', op.id);
+    result.push({
+      id: op.id,
+      nombre: op.nombre,
+      tipo: op.tipo,
+      pin: op.pin,
+      fecha_creacion: op.created_at,
+      status: op.status,
+      imagen_fondo: op.imagen_fondo,
+      partes: (partes || []).map((p: { id: string; nombre: string; rol: string; tipo: string }) => ({
+        id: p.id,
+        nombre: p.nombre,
+        rol: p.rol as Party['rol'],
+        tipo: p.tipo as Party['tipo'],
+      })),
+    });
   }
+  return result;
+}
+
+export async function findOperationByPin(pin: string): Promise<Operation | undefined> {
+  if (!supabase) return undefined;
+  const { data: ops } = await supabase.from('operaciones').select('*').ilike('pin', pin);
+  if (!ops || ops.length === 0) return undefined;
+  const op = ops[0];
+  const { data: partes } = await supabase.from('partes').select('*').eq('operacion_id', op.id);
+  return {
+    id: op.id,
+    nombre: op.nombre,
+    tipo: op.tipo,
+    pin: op.pin,
+    fecha_creacion: op.created_at,
+    status: op.status,
+    imagen_fondo: op.imagen_fondo,
+    partes: (partes || []).map((p: { id: string; nombre: string; rol: string; tipo: string }) => ({
+      id: p.id, nombre: p.nombre, rol: p.rol as Party['rol'], tipo: p.tipo as Party['tipo'],
+    })),
+  };
+}
+
+// Generate docs for a party from templates (used when no docs exist in DB yet)
+function generatePartyDocTemplates(party: Party): { es: string; en: string; requerido: boolean }[] {
+  if (party.tipo === 'fisica') {
+    return PERSONA_FISICA_DOCS.map(d => ({ es: d.nombre.es, en: d.nombre.en, requerido: d.requerido }));
+  } else {
+    const empresa = PERSONA_MORAL_EMPRESA_DOCS.map(d => ({ es: d.nombre.es, en: d.nombre.en, requerido: d.requerido }));
+    const apoderado = PERSONA_MORAL_APODERADO_DOCS.map(d => ({ es: `(Apoderado) ${d.nombre.es}`, en: `(Attorney) ${d.nombre.en}`, requerido: d.requerido }));
+    return [...empresa, ...apoderado];
+  }
+}
+
+function generalDocTemplates(categoria: DocCategory): { es: string; en: string; requerido: boolean }[] {
+  const map = { cierre: CIERRE_DOCS, notario: NOTARIO_DOCS, escrow: ESCROW_DOCS };
+  return (map[categoria] || []).map(d => ({ es: d.nombre.es, en: d.nombre.en, requerido: d.requerido }));
+}
+
+// Ensure docs exist in DB for an operation (auto-generate from templates if missing)
+export async function ensureDocs(operation: Operation): Promise<void> {
+  if (!supabase) return;
+  const { data: existing } = await supabase.from('documentos').select('id').eq('operacion_id', operation.id).limit(1);
+  if (existing && existing.length > 0) return; // docs already exist
+
+  const inserts: { operacion_id: string; party_id: string | null; categoria: string | null; nombre_doc_es: string; nombre_doc_en: string; requerido: boolean }[] = [];
+
+  // Party docs
+  for (const party of operation.partes) {
+    const templates = generatePartyDocTemplates(party);
+    for (const t of templates) {
+      inserts.push({ operacion_id: operation.id, party_id: party.id, categoria: null, nombre_doc_es: t.es, nombre_doc_en: t.en, requerido: t.requerido });
+    }
+  }
+
+  // General docs
+  const cats: DocCategory[] = ['cierre', 'notario', 'escrow'];
+  for (const cat of cats) {
+    const templates = generalDocTemplates(cat);
+    for (const t of templates) {
+      inserts.push({ operacion_id: operation.id, party_id: null, categoria: cat, nombre_doc_es: t.es, nombre_doc_en: t.en, requerido: t.requerido });
+    }
+  }
+
+  await supabase.from('documentos').insert(inserts);
+}
+
+export async function getPartyDocs(operationId: string, partyId: string): Promise<Document[]> {
+  if (!supabase) return [];
+  const { data } = await supabase.from('documentos').select('*').eq('operacion_id', operationId).eq('party_id', partyId);
+  return (data || []).map(mapDoc);
+}
+
+export async function getGeneralDocs(operationId: string, categoria: DocCategory): Promise<Document[]> {
+  if (!supabase) return [];
+  const { data } = await supabase.from('documentos').select('*').eq('operacion_id', operationId).eq('categoria', categoria).is('party_id', null);
+  return (data || []).map(mapDoc);
+}
+
+export async function getProgress(operationId: string): Promise<{ total: number; completed: number; percent: number }> {
+  if (!supabase) return { total: 0, completed: 0, percent: 0 };
+  const { data } = await supabase.from('documentos').select('*').eq('operacion_id', operationId).eq('requerido', true);
+  const docs = data || [];
+  const completed = docs.filter((d: { archivo_url: string | null }) => d.archivo_url !== null).length;
+  const percent = docs.length > 0 ? Math.round((completed / docs.length) * 100) : 0;
+  return { total: docs.length, completed, percent };
+}
+
+export async function getPartyProgress(operationId: string, partyId: string): Promise<{ total: number; completed: number; percent: number }> {
+  if (!supabase) return { total: 0, completed: 0, percent: 0 };
+  const { data } = await supabase.from('documentos').select('*').eq('operacion_id', operationId).eq('party_id', partyId).eq('requerido', true);
+  const docs = data || [];
+  const completed = docs.filter((d: { archivo_url: string | null }) => d.archivo_url !== null).length;
+  const percent = docs.length > 0 ? Math.round((completed / docs.length) * 100) : 0;
+  return { total: docs.length, completed, percent };
+}
+
+export async function uploadDocument(docId: string, file: File): Promise<string | null> {
+  if (!supabase) return null;
+  const path = `${docId}/${file.name}`;
+  const { error } = await supabase.storage.from('cierres-docs').upload(path, file, { upsert: true });
+  if (error) { console.error('Upload error:', error); return null; }
+  const { data: urlData } = supabase.storage.from('cierres-docs').getPublicUrl(path);
+  const url = urlData.publicUrl;
+
+  await supabase.from('documentos').update({
+    archivo_url: url,
+    subido_por: 'usuario',
+    fecha_subida: new Date().toISOString(),
+  }).eq('id', docId);
+
+  return url;
+}
+
+function mapDoc(d: { id: string; operacion_id: string; party_id: string | null; categoria: string | null; nombre_doc_es: string; nombre_doc_en: string; requerido: boolean; archivo_url: string | null; subido_por: string | null; fecha_subida: string | null }): Document {
+  return {
+    id: d.id,
+    operacion_id: d.operacion_id,
+    party_id: d.party_id,
+    categoria: d.categoria as DocCategory | null,
+    nombre_doc: { es: d.nombre_doc_es, en: d.nombre_doc_en },
+    requerido: d.requerido,
+    archivo_url: d.archivo_url,
+    subido_por: d.subido_por,
+    fecha_subida: d.fecha_subida,
+  };
 }
