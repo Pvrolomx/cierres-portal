@@ -43,7 +43,7 @@ function LangToggle() {
 }
 
 /* ─── PIN Entry ─── */
-function PinEntry({ onAccess }: { onAccess: (op: Operation | "admin") => void }) {
+function PinEntry({ onAccess }: { onAccess: (op: Operation | "admin", alsoAdmin?: boolean) => void }) {
   const { lang } = useLang();
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
@@ -51,8 +51,10 @@ function PinEntry({ onAccess }: { onAccess: (op: Operation | "admin") => void })
 
   const handleSubmit = () => {
     if (pin.length < 4) return;
-    if (isAdminPin(pin)) { onAccess("admin"); return; }
     const op = findOperationByPin(pin);
+    const admin = isAdminPin(pin);
+    if (op) { onAccess(op, admin); return; }
+    if (admin) { onAccess("admin"); return; }
     if (op) { onAccess(op); } else {
       setError(t("invalidPin", lang)); setShaking(true);
       setTimeout(() => setShaking(false), 500); setPin("");
@@ -188,7 +190,7 @@ function GeneralSection({ operationId, categoria, onUpload }: { operationId: str
 }
 
 /* ─── Operation Dashboard ─── */
-function OperationDashboard({ operation, onLogout }: { operation: Operation; onLogout: () => void }) {
+function OperationDashboard({ operation, onLogout, isAdmin, onGoAdmin }: { operation: Operation; onLogout: () => void; isAdmin?: boolean; onGoAdmin?: () => void }) {
   const { lang } = useLang();
   const [, setRefresh] = useState(0);
   const progress = getProgress(operation.id);
@@ -215,6 +217,11 @@ function OperationDashboard({ operation, onLogout }: { operation: Operation; onL
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
         <div className="relative z-10 px-6 py-12 sm:px-8 sm:py-16 text-center">
           <button onClick={onLogout} className="absolute top-4 right-4 text-white/70 hover:text-white text-xs bg-white/10 hover:bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-lg transition-all">{t("exit", lang)}</button>
+          {isAdmin && onGoAdmin && (
+            <button onClick={onGoAdmin} className="absolute top-4 right-20 text-white/70 hover:text-white text-xs bg-white/10 hover:bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-lg transition-all">
+              {lang === "es" ? "📋 Todos" : "📋 All"}
+            </button>
+          )}
           <div className="absolute top-4 left-4"><LangToggle /></div>
           <span className="text-xs font-medium text-white/60 uppercase tracking-wider">{OPERATION_LABELS[operation.tipo][lang]}</span>
           <h1 className="text-3xl sm:text-5xl font-bold text-white mt-3 leading-tight">{operation.nombre}</h1>
@@ -314,18 +321,20 @@ export default function Home() {
   const [view, setView] = useState<"pin" | "admin" | "operation">("pin");
   const [activeOp, setActiveOp] = useState<Operation | null>(null);
   const [lang, setLang] = useState<Lang>("es");
+  const [isAdmin, setIsAdmin] = useState(false);
   const toggleLang = () => setLang(l => l === "es" ? "en" : "es");
-  const handleAccess = (result: Operation | "admin") => {
-    if (result === "admin") setView("admin");
+  const handleAccess = (result: Operation | "admin", alsoAdmin?: boolean) => {
+    if (alsoAdmin) setIsAdmin(true);
+    if (result === "admin") { setIsAdmin(true); setView("admin"); }
     else { setActiveOp(result); setView("operation"); }
   };
-  const handleLogout = () => { setView("pin"); setActiveOp(null); };
+  const handleLogout = () => { setView("pin"); setActiveOp(null); setIsAdmin(false); };
 
   return (
     <LangContext.Provider value={{ lang, toggle: toggleLang }}>
       {view === "pin" && <div className="relative"><div className="absolute top-0 right-0"><LangToggle /></div><PinEntry onAccess={handleAccess} /></div>}
       {view === "admin" && <AdminPanel onSelect={op => { setActiveOp(op); setView("operation"); }} onLogout={handleLogout} />}
-      {view === "operation" && activeOp && <OperationDashboard operation={activeOp} onLogout={handleLogout} />}
+      {view === "operation" && activeOp && <OperationDashboard operation={activeOp} onLogout={handleLogout} isAdmin={isAdmin} onGoAdmin={() => setView("admin")} />}
     </LangContext.Provider>
   );
 }

@@ -101,7 +101,7 @@ export const PERSONA_MORAL_APODERADO_DOCS: { nombre: { es: string; en: string };
   { nombre: { es: 'RFC / Cédula Fiscal', en: 'RFC / Tax ID' }, requerido: true },
   { nombre: { es: 'Comprobante domicilio (<1 mes)', en: 'Address proof (<1 month)' }, requerido: true },
   { nombre: { es: 'KYC firmado', en: 'Signed KYC' }, requerido: true },
-  { nombre: { es: 'Acta de Nacimiento', en: 'Birth Certificate' }, requerido: false },
+  { nombre: { es: 'Acta de Matrimonio', en: 'Marriage Certificate' }, requerido: false },
 ];
 
 // General docs (not tied to parties)
@@ -113,6 +113,7 @@ export const CIERRE_DOCS: { nombre: { es: string; en: string }; requerido: boole
   { nombre: { es: 'Certificado de No Adeudo de Predial', en: 'Property Tax Clearance' }, requerido: true },
   { nombre: { es: 'Certificado de No Adeudo de Agua', en: 'Water Bill Clearance' }, requerido: true },
   { nombre: { es: 'Documentos adicionales', en: 'Additional documents' }, requerido: false },
+  { nombre: { es: 'Permiso de Relaciones Exteriores', en: 'Foreign Affairs Permit' }, requerido: true },
 ];
 
 export const NOTARIO_DOCS: { nombre: { es: string; en: string }; requerido: boolean }[] = [

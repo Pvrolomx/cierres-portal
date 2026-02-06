@@ -83,7 +83,7 @@ const INITIAL_OPERATIONS: Operation[] = [
     id: 'op-001',
     nombre: 'Coral and Sandy',
     tipo: 'fideicomiso',
-    pin: 'CS2026',
+    pin: '143414',
     fecha_creacion: '2026-02-06',
     status: 'activa',
     imagen_fondo: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&q=80',
