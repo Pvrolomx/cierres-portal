@@ -11,25 +11,41 @@ export const OPERATION_LABELS: Record<OperationType, { es: string; en: string }>
   reconocimiento_fideicomisario: { es: 'Reconocimiento de Fideicomisario', en: 'Trustee Recognition' },
 };
 
-export type DocCategory = 'comprador' | 'vendedor' | 'cierre' | 'notario' | 'escrow';
+export type PartyRole = 'comprador' | 'vendedor';
+export type PartyType = 'fisica' | 'moral';
 
-export const CATEGORY_LABELS: Record<DocCategory, { es: string; en: string }> = {
+export const PARTY_ROLE_LABELS: Record<PartyRole, { es: string; en: string }> = {
   comprador: { es: 'Comprador', en: 'Buyer' },
   vendedor: { es: 'Vendedor', en: 'Seller' },
+};
+
+export const PARTY_TYPE_LABELS: Record<PartyType, { es: string; en: string }> = {
+  fisica: { es: 'Persona Física', en: 'Individual' },
+  moral: { es: 'Persona Moral', en: 'Legal Entity' },
+};
+
+export type DocCategory = 'cierre' | 'notario' | 'escrow';
+
+export const CATEGORY_LABELS: Record<DocCategory, { es: string; en: string }> = {
   cierre: { es: 'Documentos de Cierre', en: 'Closing Documents' },
   notario: { es: 'Notario', en: 'Notary' },
   escrow: { es: 'Escrow', en: 'Escrow' },
 };
 
 export const CATEGORY_ICONS: Record<DocCategory, string> = {
-  comprador: '👤',
-  vendedor: '🏠',
   cierre: '📐',
   notario: '⚖️',
   escrow: '🔐',
 };
 
 export type Lang = 'es' | 'en';
+
+export interface Party {
+  id: string;
+  nombre: string;
+  rol: PartyRole;
+  tipo: PartyType;
+}
 
 export interface Operation {
   id: string;
@@ -39,12 +55,14 @@ export interface Operation {
   fecha_creacion: string;
   status: 'activa' | 'cerrada';
   imagen_fondo?: string;
+  partes: Party[];
 }
 
 export interface Document {
   id: string;
   operacion_id: string;
-  categoria: DocCategory;
+  party_id: string | null;       // null = doc general (cierre/notario/escrow)
+  categoria: DocCategory | null;  // null = doc de parte
   nombre_doc: { es: string; en: string };
   requerido: boolean;
   archivo_url: string | null;
@@ -52,47 +70,62 @@ export interface Document {
   fecha_subida: string | null;
 }
 
-export interface Template {
-  id: string;
-  tipo_operacion: OperationType;
-  categoria: DocCategory;
-  nombre_doc: { es: string; en: string };
-  requerido: boolean;
-}
+// Docs for Persona Física
+export const PERSONA_FISICA_DOCS: { nombre: { es: string; en: string }; requerido: boolean }[] = [
+  { nombre: { es: 'Pasaporte vigente / INE', en: 'Valid passport / ID' }, requerido: true },
+  { nombre: { es: 'Forma migratoria (FM/visa/residencia)', en: 'Immigration form (FM/visa/residency)' }, requerido: false },
+  { nombre: { es: 'CURP', en: 'CURP' }, requerido: true },
+  { nombre: { es: 'RFC / Cédula Fiscal', en: 'RFC / Tax ID' }, requerido: true },
+  { nombre: { es: 'Comprobante domicilio (<1 mes)', en: 'Address proof (<1 month)' }, requerido: true },
+  { nombre: { es: 'Acta de Matrimonio', en: 'Marriage Certificate' }, requerido: false },
+  { nombre: { es: 'Acta de Nacimiento', en: 'Birth Certificate' }, requerido: false },
+  { nombre: { es: 'KYC firmado', en: 'Signed KYC' }, requerido: true },
+  { nombre: { es: 'Forma de pago', en: 'Payment method' }, requerido: false },
+  { nombre: { es: 'Designación de fideicomisarios sustitutos', en: 'Substitute trustee designation' }, requerido: false },
+];
 
-export const FIDEICOMISO_TEMPLATES: Omit<Template, 'id'>[] = [
-  // Comprador / Buyer
-  { tipo_operacion: 'fideicomiso', categoria: 'comprador', nombre_doc: { es: 'Pasaporte vigente', en: 'Valid passport' }, requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'comprador', nombre_doc: { es: 'Forma migratoria (FM/visa/residencia)', en: 'Immigration form (FM/visa/residency)' }, requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'comprador', nombre_doc: { es: 'Comprobante domicilio extranjero (<1 mes)', en: 'Foreign address proof (<1 month)' }, requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'comprador', nombre_doc: { es: 'KYC firmado', en: 'Signed KYC' }, requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'comprador', nombre_doc: { es: 'Acta matrimonio (si aplica)', en: 'Marriage certificate (if applicable)' }, requerido: false },
-  { tipo_operacion: 'fideicomiso', categoria: 'comprador', nombre_doc: { es: 'Forma de pago', en: 'Payment method' }, requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'comprador', nombre_doc: { es: 'Designación de fideicomisarios sustitutos', en: 'Substitute trustee designation' }, requerido: true },
-  // Vendedor / Seller
-  { tipo_operacion: 'fideicomiso', categoria: 'vendedor', nombre_doc: { es: 'INE/Pasaporte', en: 'ID/Passport' }, requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'vendedor', nombre_doc: { es: 'CURP', en: 'CURP' }, requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'vendedor', nombre_doc: { es: 'RFC / Cédula Fiscal', en: 'RFC / Tax ID' }, requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'vendedor', nombre_doc: { es: 'Comprobante domicilio (<1 mes)', en: 'Address proof (<1 month)' }, requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'vendedor', nombre_doc: { es: 'Acta de Matrimonio', en: 'Marriage Certificate' }, requerido: false },
-  { tipo_operacion: 'fideicomiso', categoria: 'vendedor', nombre_doc: { es: 'Acta de Nacimiento', en: 'Birth Certificate' }, requerido: true },
-  // Documentos de Cierre / Closing Documents
-  { tipo_operacion: 'fideicomiso', categoria: 'cierre', nombre_doc: { es: 'Escritura/Fideicomiso', en: 'Deed/Trust' }, requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'cierre', nombre_doc: { es: 'Régimen de Condominio', en: 'Condo Regime' }, requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'cierre', nombre_doc: { es: 'Certificado de Libertad de Gravamen', en: 'Lien-Free Certificate' }, requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'cierre', nombre_doc: { es: 'Avalúo', en: 'Appraisal' }, requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'cierre', nombre_doc: { es: 'Certificado de No Adeudo de Predial', en: 'Property Tax Clearance' }, requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'cierre', nombre_doc: { es: 'Certificado de No Adeudo de Agua', en: 'Water Bill Clearance' }, requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'cierre', nombre_doc: { es: 'Documentos adicionales', en: 'Additional documents' }, requerido: false },
-  // Notario / Notary
-  { tipo_operacion: 'fideicomiso', categoria: 'notario', nombre_doc: { es: 'Gastos de cierre', en: 'Closing costs' }, requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'notario', nombre_doc: { es: 'Proyecto de Escritura', en: 'Draft Deed' }, requerido: true },
-  // Escrow (antes Transacción)
-  { tipo_operacion: 'fideicomiso', categoria: 'escrow', nombre_doc: { es: 'Oferta firmada', en: 'Signed offer' }, requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'escrow', nombre_doc: { es: 'Escrow agreement', en: 'Escrow agreement' }, requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'escrow', nombre_doc: { es: 'KYC Vendedor', en: 'Seller KYC' }, requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'escrow', nombre_doc: { es: "ID's Vendedor", en: "Seller ID's" }, requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'escrow', nombre_doc: { es: 'KYC Comprador', en: 'Buyer KYC' }, requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'escrow', nombre_doc: { es: "ID's Comprador", en: "Buyer ID's" }, requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'escrow', nombre_doc: { es: 'Carta Distribución', en: 'Distribution Letter' }, requerido: true },
+// Docs for Persona Moral — Empresa
+export const PERSONA_MORAL_EMPRESA_DOCS: { nombre: { es: string; en: string }; requerido: boolean }[] = [
+  { nombre: { es: 'Acta Constitutiva', en: 'Articles of Incorporation' }, requerido: true },
+  { nombre: { es: 'RFC de la empresa', en: 'Company Tax ID' }, requerido: true },
+  { nombre: { es: 'Comprobante domicilio fiscal', en: 'Fiscal address proof' }, requerido: true },
+  { nombre: { es: 'Poder Notarial del apoderado', en: 'Notarized Power of Attorney' }, requerido: true },
+  { nombre: { es: 'KYC firmado', en: 'Signed KYC' }, requerido: true },
+  { nombre: { es: 'Cédula Fiscal', en: 'Tax Certificate' }, requerido: true },
+];
+
+// Docs for Persona Moral — Apoderado (persona física)
+export const PERSONA_MORAL_APODERADO_DOCS: { nombre: { es: string; en: string }; requerido: boolean }[] = [
+  { nombre: { es: 'Pasaporte vigente / INE', en: 'Valid passport / ID' }, requerido: true },
+  { nombre: { es: 'CURP', en: 'CURP' }, requerido: true },
+  { nombre: { es: 'RFC / Cédula Fiscal', en: 'RFC / Tax ID' }, requerido: true },
+  { nombre: { es: 'Comprobante domicilio (<1 mes)', en: 'Address proof (<1 month)' }, requerido: true },
+  { nombre: { es: 'KYC firmado', en: 'Signed KYC' }, requerido: true },
+  { nombre: { es: 'Acta de Nacimiento', en: 'Birth Certificate' }, requerido: false },
+];
+
+// General docs (not tied to parties)
+export const CIERRE_DOCS: { nombre: { es: string; en: string }; requerido: boolean }[] = [
+  { nombre: { es: 'Escritura/Fideicomiso', en: 'Deed/Trust' }, requerido: true },
+  { nombre: { es: 'Régimen de Condominio', en: 'Condo Regime' }, requerido: true },
+  { nombre: { es: 'Certificado de Libertad de Gravamen', en: 'Lien-Free Certificate' }, requerido: true },
+  { nombre: { es: 'Avalúo', en: 'Appraisal' }, requerido: true },
+  { nombre: { es: 'Certificado de No Adeudo de Predial', en: 'Property Tax Clearance' }, requerido: true },
+  { nombre: { es: 'Certificado de No Adeudo de Agua', en: 'Water Bill Clearance' }, requerido: true },
+  { nombre: { es: 'Documentos adicionales', en: 'Additional documents' }, requerido: false },
+];
+
+export const NOTARIO_DOCS: { nombre: { es: string; en: string }; requerido: boolean }[] = [
+  { nombre: { es: 'Gastos de cierre', en: 'Closing costs' }, requerido: true },
+  { nombre: { es: 'Proyecto de Escritura', en: 'Draft Deed' }, requerido: true },
+];
+
+export const ESCROW_DOCS: { nombre: { es: string; en: string }; requerido: boolean }[] = [
+  { nombre: { es: 'Oferta firmada', en: 'Signed offer' }, requerido: true },
+  { nombre: { es: 'Escrow agreement', en: 'Escrow agreement' }, requerido: true },
+  { nombre: { es: 'KYC Vendedor', en: 'Seller KYC' }, requerido: true },
+  { nombre: { es: "ID's Vendedor", en: "Seller ID's" }, requerido: true },
+  { nombre: { es: 'KYC Comprador', en: 'Buyer KYC' }, requerido: true },
+  { nombre: { es: "ID's Comprador", en: "Buyer ID's" }, requerido: true },
+  { nombre: { es: 'Carta Distribución', en: 'Distribution Letter' }, requerido: true },
 ];

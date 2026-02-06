@@ -2,31 +2,20 @@
 
 import { useState, createContext, useContext } from "react";
 import {
-  Operation,
-  OPERATION_LABELS,
-  DocCategory,
-  CATEGORY_LABELS,
-  CATEGORY_ICONS,
-  Document,
-  Lang,
+  Operation, OPERATION_LABELS, DocCategory, CATEGORY_LABELS, CATEGORY_ICONS,
+  Document, Lang, Party, PARTY_ROLE_LABELS, PARTY_TYPE_LABELS,
 } from "@/types";
 import {
-  getOperations,
-  getDocuments,
-  getProgress,
-  findOperationByPin,
-  isAdminPin,
-  markDocumentUploaded,
+  getOperations, getProgress, findOperationByPin, isAdminPin,
+  markDocumentUploaded, getPartyDocs, getGeneralDocs, getPartyProgress,
 } from "@/lib/store";
 
-/* ─── i18n Context ─── */
 const LangContext = createContext<{ lang: Lang; toggle: () => void }>({ lang: "es", toggle: () => {} });
 function useLang() { return useContext(LangContext); }
 
 const UI: Record<string, { es: string; en: string }> = {
   accessTitle: { es: "Acceso al Portal", en: "Portal Access" },
   accessDesc: { es: "Ingresa tu código de acceso para ver los documentos de tu operación", en: "Enter your access code to view your closing documents" },
-  accessPlaceholder: { es: "Código de acceso", en: "Access code" },
   accessBtn: { es: "Acceder", en: "Access" },
   accessHelp: { es: "Contacta a tu asesor si no tienes tu código", en: "Contact your advisor if you don't have your code" },
   invalidPin: { es: "PIN no válido", en: "Invalid PIN" },
@@ -37,20 +26,15 @@ const UI: Record<string, { es: string; en: string }> = {
   optional: { es: "Opcional", en: "Optional" },
   adminTitle: { es: "Panel de Administración", en: "Admin Panel" },
   activeOps: { es: "operaciones activas", en: "active closings" },
+  empresa: { es: "Empresa", en: "Company" },
+  apoderado: { es: "Apoderado", en: "Attorney-in-fact" },
 };
+function t(key: string, lang: Lang): string { return UI[key]?.[lang] || key; }
 
-function t(key: string, lang: Lang): string {
-  return UI[key]?.[lang] || key;
-}
-
-/* ─── Language Toggle ─── */
 function LangToggle() {
   const { lang, toggle } = useLang();
   return (
-    <button
-      onClick={toggle}
-      className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 transition-all text-gray-600"
-    >
+    <button onClick={toggle} className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 transition-all text-gray-600">
       <span className={lang === "es" ? "font-bold text-gray-900" : ""}>ES</span>
       <span className="text-gray-300">|</span>
       <span className={lang === "en" ? "font-bold text-gray-900" : ""}>EN</span>
@@ -58,7 +42,7 @@ function LangToggle() {
   );
 }
 
-/* ─── PIN Entry Screen ─── */
+/* ─── PIN Entry ─── */
 function PinEntry({ onAccess }: { onAccess: (op: Operation | "admin") => void }) {
   const { lang } = useLang();
   const [pin, setPin] = useState("");
@@ -70,10 +54,8 @@ function PinEntry({ onAccess }: { onAccess: (op: Operation | "admin") => void })
     if (isAdminPin(pin)) { onAccess("admin"); return; }
     const op = findOperationByPin(pin);
     if (op) { onAccess(op); } else {
-      setError(t("invalidPin", lang));
-      setShaking(true);
-      setTimeout(() => setShaking(false), 500);
-      setPin("");
+      setError(t("invalidPin", lang)); setShaking(true);
+      setTimeout(() => setShaking(false), 500); setPin("");
     }
   };
 
@@ -87,23 +69,15 @@ function PinEntry({ onAccess }: { onAccess: (op: Operation | "admin") => void })
           <h2 className="text-2xl font-bold text-gray-900">{t("accessTitle", lang)}</h2>
           <p className="text-gray-500 mt-2 text-sm">{t("accessDesc", lang)}</p>
         </div>
-        <div className={`${shaking ? "animate-shake" : ""}`}>
-          <input
-            type="text"
-            value={pin}
-            onChange={(e) => {
-              const v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
-              setPin(v); setError("");
-            }}
+        <div className={shaking ? "animate-shake" : ""}>
+          <input type="text" value={pin}
+            onChange={(e) => { setPin(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6)); setError(""); }}
             onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-            placeholder={t("accessPlaceholder", lang)}
-            maxLength={6}
-            className="w-full text-center text-2xl font-mono tracking-[0.5em] py-4 px-6 border-2 border-gray-200 rounded-xl focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/20 outline-none transition-all bg-white placeholder:tracking-normal placeholder:text-base placeholder:text-gray-300"
-            autoFocus
-          />
+            placeholder={lang === "es" ? "Código de acceso" : "Access code"} maxLength={6}
+            className="w-full text-center text-2xl font-mono tracking-[0.5em] py-4 px-6 border-2 border-gray-200 rounded-xl focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/20 outline-none transition-all bg-white placeholder:tracking-normal placeholder:text-base placeholder:text-gray-300" autoFocus />
           {error && <p className="text-red-500 text-sm text-center mt-3">{error}</p>}
           <button onClick={handleSubmit} disabled={pin.length < 4}
-            className="w-full mt-4 py-3.5 bg-[#1e3a5f] text-white rounded-xl font-medium text-sm disabled:opacity-30 hover:bg-[#2a4d7a] active:bg-[#162d4a] transition-all shadow-lg shadow-[#1e3a5f]/20">
+            className="w-full mt-4 py-3.5 bg-[#1e3a5f] text-white rounded-xl font-medium text-sm disabled:opacity-30 hover:bg-[#2a4d7a] transition-all shadow-lg shadow-[#1e3a5f]/20">
             {t("accessBtn", lang)}
           </button>
         </div>
@@ -113,17 +87,17 @@ function PinEntry({ onAccess }: { onAccess: (op: Operation | "admin") => void })
   );
 }
 
-/* ─── Document Row ─── */
+/* ─── Doc Row ─── */
 function DocRow({ doc, onUpload }: { doc: Document; onUpload: (id: string) => void }) {
   const { lang } = useLang();
   const hasFile = doc.archivo_url !== null;
   return (
     <div className="flex items-center gap-3 py-3 px-4 border-b border-gray-100 last:border-0 hover:bg-gray-50/50 transition-colors">
-      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0 ${hasFile ? "bg-emerald-100 text-emerald-600" : "bg-red-50 text-red-400"}`}>
+      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs flex-shrink-0 ${hasFile ? "bg-emerald-100 text-emerald-600" : "bg-red-50 text-red-400"}`}>
         {hasFile ? "✓" : "○"}
       </div>
       <div className="flex-1 min-w-0">
-        <p className={`text-sm ${hasFile ? "text-gray-500" : "text-gray-900"}`}>{doc.nombre_doc[lang]}</p>
+        <p className={`text-sm ${hasFile ? "text-gray-500 line-through" : "text-gray-900"}`}>{doc.nombre_doc[lang]}</p>
         {doc.fecha_subida && <p className="text-xs text-gray-400 mt-0.5">{new Date(doc.fecha_subida).toLocaleDateString(lang === "es" ? "es-MX" : "en-US")}</p>}
         {!doc.requerido && !hasFile && <p className="text-xs text-amber-500 mt-0.5">{t("optional", lang)}</p>}
       </div>
@@ -136,24 +110,79 @@ function DocRow({ doc, onUpload }: { doc: Document; onUpload: (id: string) => vo
   );
 }
 
-/* ─── Category Section ─── */
-function CategorySection({ category, docs, onUpload }: { category: DocCategory; docs: Document[]; onUpload: (id: string) => void }) {
+/* ─── Party Section ─── */
+function PartySection({ party, operationId, onUpload }: { party: Party; operationId: string; onUpload: (id: string) => void }) {
   const { lang } = useLang();
   const [open, setOpen] = useState(true);
-  const completed = docs.filter((d) => d.archivo_url !== null).length;
+  const docs = getPartyDocs(operationId, party.id);
+  const prog = getPartyProgress(operationId, party.id);
+  const allDone = prog.completed === prog.total;
+
+  const icon = party.tipo === 'moral' ? '🏢' : (party.rol === 'comprador' ? '👤' : '🏠');
+  const roleLabel = PARTY_ROLE_LABELS[party.rol][lang];
+  const typeLabel = PARTY_TYPE_LABELS[party.tipo][lang];
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-3 overflow-hidden">
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50/50 transition-colors">
+        <div className="flex items-center gap-3">
+          <span className="text-lg">{icon}</span>
+          <div className="text-left">
+            <span className="text-sm font-semibold text-gray-800">{party.nombre}</span>
+            <span className="text-xs text-gray-400 ml-2">{roleLabel} · {typeLabel}</span>
+          </div>
+          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${allDone ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
+            {prog.completed}/{prog.total}
+          </span>
+        </div>
+        <span className={`text-gray-400 transition-transform text-xs ${open ? "rotate-180" : ""}`}>▼</span>
+      </button>
+      {open && (
+        <div className="border-t border-gray-100">
+          {party.tipo === 'moral' && (
+            <>
+              <div className="px-5 py-2 bg-blue-50/50 border-b border-gray-100">
+                <span className="text-xs font-semibold text-[#1e3a5f]">🏢 {t("empresa", lang)}</span>
+              </div>
+              {docs.filter(d => !d.nombre_doc.es.startsWith('(Apoderado)')).map(doc => (
+                <DocRow key={doc.id} doc={doc} onUpload={onUpload} />
+              ))}
+              <div className="px-5 py-2 bg-amber-50/50 border-b border-t border-gray-100">
+                <span className="text-xs font-semibold text-amber-700">👤 {t("apoderado", lang)}</span>
+              </div>
+              {docs.filter(d => d.nombre_doc.es.startsWith('(Apoderado)')).map(doc => (
+                <DocRow key={doc.id} doc={doc} onUpload={onUpload} />
+              ))}
+            </>
+          )}
+          {party.tipo === 'fisica' && docs.map(doc => (
+            <DocRow key={doc.id} doc={doc} onUpload={onUpload} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── General Category Section ─── */
+function GeneralSection({ operationId, categoria, onUpload }: { operationId: string; categoria: DocCategory; onUpload: (id: string) => void }) {
+  const { lang } = useLang();
+  const [open, setOpen] = useState(true);
+  const docs = getGeneralDocs(operationId, categoria);
+  const completed = docs.filter(d => d.archivo_url !== null).length;
   const allDone = completed === docs.length;
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-3 overflow-hidden">
       <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50/50 transition-colors">
         <div className="flex items-center gap-3">
-          <span className="text-lg">{CATEGORY_ICONS[category]}</span>
-          <span className="text-sm font-semibold text-gray-800">{CATEGORY_LABELS[category][lang]}</span>
+          <span className="text-lg">{CATEGORY_ICONS[categoria]}</span>
+          <span className="text-sm font-semibold text-gray-800">{CATEGORY_LABELS[categoria][lang]}</span>
           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${allDone ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>{completed}/{docs.length}</span>
         </div>
         <span className={`text-gray-400 transition-transform text-xs ${open ? "rotate-180" : ""}`}>▼</span>
       </button>
-      {open && <div className="border-t border-gray-100">{docs.map((doc) => <DocRow key={doc.id} doc={doc} onUpload={onUpload} />)}</div>}
+      {open && <div className="border-t border-gray-100">{docs.map(doc => <DocRow key={doc.id} doc={doc} onUpload={onUpload} />)}</div>}
     </div>
   );
 }
@@ -161,18 +190,22 @@ function CategorySection({ category, docs, onUpload }: { category: DocCategory; 
 /* ─── Operation Dashboard ─── */
 function OperationDashboard({ operation, onLogout }: { operation: Operation; onLogout: () => void }) {
   const { lang } = useLang();
-  const [docs, setDocs] = useState(() => getDocuments(operation.id));
+  const [, setRefresh] = useState(0);
   const progress = getProgress(operation.id);
-  const categories: DocCategory[] = ["comprador", "vendedor", "cierre", "notario", "escrow"];
+  const generalCats: DocCategory[] = ["cierre", "notario", "escrow"];
 
   const handleUpload = (docId: string) => {
     markDocumentUploaded(docId, `https://storage.example.com/${docId}`);
-    setDocs(getDocuments(operation.id));
+    setRefresh(r => r + 1);
   };
+
+  // Group parties by role
+  const compradores = operation.partes.filter(p => p.rol === 'comprador');
+  const vendedores = operation.partes.filter(p => p.rol === 'vendedor');
 
   return (
     <div>
-      {/* Hero — centered name, no date */}
+      {/* Hero */}
       <div className="relative rounded-2xl overflow-hidden mb-6 shadow-lg">
         {operation.imagen_fondo ? (
           <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${operation.imagen_fondo})` }} />
@@ -180,21 +213,11 @@ function OperationDashboard({ operation, onLogout }: { operation: Operation; onL
           <div className="absolute inset-0 bg-gradient-to-br from-[#1e3a5f] to-[#3b82f6]" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
-
         <div className="relative z-10 px-6 py-12 sm:px-8 sm:py-16 text-center">
-          <button onClick={onLogout}
-            className="absolute top-4 right-4 text-white/70 hover:text-white text-xs bg-white/10 hover:bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-lg transition-all">
-            {t("exit", lang)}
-          </button>
+          <button onClick={onLogout} className="absolute top-4 right-4 text-white/70 hover:text-white text-xs bg-white/10 hover:bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-lg transition-all">{t("exit", lang)}</button>
           <div className="absolute top-4 left-4"><LangToggle /></div>
-
-          <span className="text-xs font-medium text-white/60 uppercase tracking-wider">
-            {OPERATION_LABELS[operation.tipo][lang]}
-          </span>
-          <h1 className="text-3xl sm:text-5xl font-bold text-white mt-3 leading-tight">
-            {operation.nombre}
-          </h1>
-
+          <span className="text-xs font-medium text-white/60 uppercase tracking-wider">{OPERATION_LABELS[operation.tipo][lang]}</span>
+          <h1 className="text-3xl sm:text-5xl font-bold text-white mt-3 leading-tight">{operation.nombre}</h1>
           <div className="mt-8 max-w-md mx-auto">
             <div className="flex justify-between text-xs text-white/70 mb-2">
               <span>{t("docs", lang)}</span>
@@ -207,11 +230,30 @@ function OperationDashboard({ operation, onLogout }: { operation: Operation; onL
         </div>
       </div>
 
-      {categories.map((cat) => {
-        const catDocs = docs.filter((d) => d.categoria === cat);
-        if (catDocs.length === 0) return null;
-        return <CategorySection key={cat} category={cat} docs={catDocs} onUpload={handleUpload} />;
-      })}
+      {/* Compradores */}
+      {compradores.length > 0 && (
+        <div className="mb-1">
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">
+            {PARTY_ROLE_LABELS.comprador[lang]}{compradores.length > 1 ? "s" : ""}
+          </h3>
+          {compradores.map(p => <PartySection key={p.id} party={p} operationId={operation.id} onUpload={handleUpload} />)}
+        </div>
+      )}
+
+      {/* Vendedores */}
+      {vendedores.length > 0 && (
+        <div className="mb-1 mt-4">
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">
+            {PARTY_ROLE_LABELS.vendedor[lang]}{vendedores.length > 1 ? (lang === "es" ? "es" : "s") : ""}
+          </h3>
+          {vendedores.map(p => <PartySection key={p.id} party={p} operationId={operation.id} onUpload={handleUpload} />)}
+        </div>
+      )}
+
+      {/* General sections */}
+      <div className="mt-4">
+        {generalCats.map(cat => <GeneralSection key={cat} operationId={operation.id} categoria={cat} onUpload={handleUpload} />)}
+      </div>
     </div>
   );
 }
@@ -233,13 +275,11 @@ function AdminPanel({ onSelect, onLogout }: { onSelect: (op: Operation) => void;
           <button onClick={onLogout} className="text-xs text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg transition-colors">{t("exit", lang)}</button>
         </div>
       </div>
-
       <div className="grid gap-4 sm:grid-cols-2">
-        {operations.map((op) => {
+        {operations.map(op => {
           const prog = getProgress(op.id);
           return (
-            <button key={op.id} onClick={() => onSelect(op)}
-              className="text-left bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md hover:border-gray-200 transition-all group">
+            <button key={op.id} onClick={() => onSelect(op)} className="text-left bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md hover:border-gray-200 transition-all group">
               <div className="relative h-32 overflow-hidden">
                 {op.imagen_fondo ? (
                   <div className="absolute inset-0 bg-cover bg-center group-hover:scale-105 transition-transform duration-500" style={{ backgroundImage: `url(${op.imagen_fondo})` }} />
@@ -249,11 +289,8 @@ function AdminPanel({ onSelect, onLogout }: { onSelect: (op: Operation) => void;
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
                 <div className="absolute bottom-3 left-4 right-4">
                   <h3 className="text-white font-bold text-lg">{op.nombre}</h3>
-                  <p className="text-white/60 text-xs">{OPERATION_LABELS[op.tipo][lang]}</p>
+                  <p className="text-white/60 text-xs">{OPERATION_LABELS[op.tipo][lang]} · {op.partes.length} {lang === "es" ? "partes" : "parties"}</p>
                 </div>
-                <span className={`absolute top-3 right-3 text-xs px-2 py-0.5 rounded-full font-medium backdrop-blur-sm ${op.status === "activa" ? "bg-emerald-500/80 text-white" : "bg-gray-500/80 text-white"}`}>
-                  {op.status === "activa" ? (lang === "es" ? "Activa" : "Active") : (lang === "es" ? "Cerrada" : "Closed")}
-                </span>
               </div>
               <div className="p-4">
                 <div className="flex justify-between text-xs text-gray-500 mb-1.5">
@@ -272,13 +309,12 @@ function AdminPanel({ onSelect, onLogout }: { onSelect: (op: Operation) => void;
   );
 }
 
-/* ─── Main App ─── */
+/* ─── Main ─── */
 export default function Home() {
   const [view, setView] = useState<"pin" | "admin" | "operation">("pin");
   const [activeOp, setActiveOp] = useState<Operation | null>(null);
   const [lang, setLang] = useState<Lang>("es");
-
-  const toggleLang = () => setLang((l) => (l === "es" ? "en" : "es"));
+  const toggleLang = () => setLang(l => l === "es" ? "en" : "es");
   const handleAccess = (result: Operation | "admin") => {
     if (result === "admin") setView("admin");
     else { setActiveOp(result); setView("operation"); }
@@ -287,13 +323,8 @@ export default function Home() {
 
   return (
     <LangContext.Provider value={{ lang, toggle: toggleLang }}>
-      {view === "pin" && (
-        <div className="relative">
-          <div className="absolute top-0 right-0"><LangToggle /></div>
-          <PinEntry onAccess={handleAccess} />
-        </div>
-      )}
-      {view === "admin" && <AdminPanel onSelect={(op) => { setActiveOp(op); setView("operation"); }} onLogout={handleLogout} />}
+      {view === "pin" && <div className="relative"><div className="absolute top-0 right-0"><LangToggle /></div><PinEntry onAccess={handleAccess} /></div>}
+      {view === "admin" && <AdminPanel onSelect={op => { setActiveOp(op); setView("operation"); }} onLogout={handleLogout} />}
       {view === "operation" && activeOp && <OperationDashboard operation={activeOp} onLogout={handleLogout} />}
     </LangContext.Provider>
   );
