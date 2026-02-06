@@ -11,20 +11,22 @@ export const OPERATION_LABELS: Record<OperationType, { es: string; en: string }>
   reconocimiento_fideicomisario: { es: 'Reconocimiento de Fideicomisario', en: 'Trustee Recognition' },
 };
 
-export type DocCategory = 'comprador' | 'vendedor' | 'cierre' | 'transaccion';
+export type DocCategory = 'comprador' | 'vendedor' | 'cierre' | 'notario' | 'escrow';
 
 export const CATEGORY_LABELS: Record<DocCategory, { es: string; en: string }> = {
   comprador: { es: 'Comprador', en: 'Buyer' },
   vendedor: { es: 'Vendedor', en: 'Seller' },
   cierre: { es: 'Documentos de Cierre', en: 'Closing Documents' },
-  transaccion: { es: 'Transacción', en: 'Transaction' },
+  notario: { es: 'Notario', en: 'Notary' },
+  escrow: { es: 'Escrow', en: 'Escrow' },
 };
 
 export const CATEGORY_ICONS: Record<DocCategory, string> = {
   comprador: '👤',
   vendedor: '🏠',
   cierre: '📐',
-  transaccion: '📝',
+  notario: '⚖️',
+  escrow: '🔐',
 };
 
 export type Lang = 'es' | 'en';
@@ -82,8 +84,15 @@ export const FIDEICOMISO_TEMPLATES: Omit<Template, 'id'>[] = [
   { tipo_operacion: 'fideicomiso', categoria: 'cierre', nombre_doc: { es: 'Certificado de No Adeudo de Predial', en: 'Property Tax Clearance' }, requerido: true },
   { tipo_operacion: 'fideicomiso', categoria: 'cierre', nombre_doc: { es: 'Certificado de No Adeudo de Agua', en: 'Water Bill Clearance' }, requerido: true },
   { tipo_operacion: 'fideicomiso', categoria: 'cierre', nombre_doc: { es: 'Documentos adicionales', en: 'Additional documents' }, requerido: false },
-  // Transacción / Transaction
-  { tipo_operacion: 'fideicomiso', categoria: 'transaccion', nombre_doc: { es: 'Oferta firmada', en: 'Signed offer' }, requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'transaccion', nombre_doc: { es: 'Escrow agreement', en: 'Escrow agreement' }, requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'transaccion', nombre_doc: { es: 'Proyecto de escritura', en: 'Draft deed' }, requerido: true },
+  // Notario / Notary
+  { tipo_operacion: 'fideicomiso', categoria: 'notario', nombre_doc: { es: 'Gastos de cierre', en: 'Closing costs' }, requerido: true },
+  { tipo_operacion: 'fideicomiso', categoria: 'notario', nombre_doc: { es: 'Proyecto de Escritura', en: 'Draft Deed' }, requerido: true },
+  // Escrow (antes Transacción)
+  { tipo_operacion: 'fideicomiso', categoria: 'escrow', nombre_doc: { es: 'Oferta firmada', en: 'Signed offer' }, requerido: true },
+  { tipo_operacion: 'fideicomiso', categoria: 'escrow', nombre_doc: { es: 'Escrow agreement', en: 'Escrow agreement' }, requerido: true },
+  { tipo_operacion: 'fideicomiso', categoria: 'escrow', nombre_doc: { es: 'KYC Vendedor', en: 'Seller KYC' }, requerido: true },
+  { tipo_operacion: 'fideicomiso', categoria: 'escrow', nombre_doc: { es: "ID's Vendedor", en: "Seller ID's" }, requerido: true },
+  { tipo_operacion: 'fideicomiso', categoria: 'escrow', nombre_doc: { es: 'KYC Comprador', en: 'Buyer KYC' }, requerido: true },
+  { tipo_operacion: 'fideicomiso', categoria: 'escrow', nombre_doc: { es: "ID's Comprador", en: "Buyer ID's" }, requerido: true },
+  { tipo_operacion: 'fideicomiso', categoria: 'escrow', nombre_doc: { es: 'Carta Distribución', en: 'Distribution Letter' }, requerido: true },
 ];

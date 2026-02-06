@@ -163,7 +163,7 @@ function OperationDashboard({ operation, onLogout }: { operation: Operation; onL
   const { lang } = useLang();
   const [docs, setDocs] = useState(() => getDocuments(operation.id));
   const progress = getProgress(operation.id);
-  const categories: DocCategory[] = ["comprador", "vendedor", "cierre", "transaccion"];
+  const categories: DocCategory[] = ["comprador", "vendedor", "cierre", "notario", "escrow"];
 
   const handleUpload = (docId: string) => {
     markDocumentUploaded(docId, `https://storage.example.com/${docId}`);
