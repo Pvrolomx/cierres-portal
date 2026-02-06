@@ -26,7 +26,7 @@ const INITIAL_DOCUMENTS: Document[] = FIDEICOMISO_TEMPLATES.map((t, i) => ({
 const operations = [...INITIAL_OPERATIONS];
 const documents = [...INITIAL_DOCUMENTS];
 
-export const ADMIN_PIN = 'ADM926';
+export const ADMIN_PIN = '143414';
 
 export function getOperations(): Operation[] {
   return operations;
