@@ -75,7 +75,7 @@ function generateGeneralDocs(operacionId: string, categoria: DocCategory, templa
 const CORAL_SANDY_PARTIES: Party[] = [
   { id: 'p1', nombre: 'Coral', rol: 'comprador', tipo: 'fisica' },
   { id: 'p2', nombre: 'Sandy', rol: 'comprador', tipo: 'fisica' },
-  { id: 'p3', nombre: 'Desarrollos Costa SA de CV', rol: 'vendedor', tipo: 'moral' },
+  { id: 'p3', nombre: 'Eco Inmuebles de la Bahía, S. de R.L. de C.V.', rol: 'vendedor', tipo: 'moral' },
 ];
 
 const INITIAL_OPERATIONS: Operation[] = [
