@@ -22,11 +22,11 @@ export default function RootLayout({
         <header className="bg-[#1e3a5f] text-white shadow-lg">
           <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold tracking-tight">CIERRES</h1>
+              <h1 className="text-xl font-bold tracking-tight">Portal de Cierres</h1>
               <p className="text-xs text-blue-200 tracking-wide">Expat Advisor MX</p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-blue-200">Portal de Documentos</p>
+              <p className="text-xs text-blue-200">Expat Advisor MX</p>
             </div>
           </div>
         </header>

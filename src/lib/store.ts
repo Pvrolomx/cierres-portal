@@ -1,6 +1,5 @@
-import { Operation, Document, FIDEICOMISO_TEMPLATES, DocCategory } from '@/types';
+import { Operation, Document, FIDEICOMISO_TEMPLATES } from '@/types';
 
-// Operations with background images and alfanumeric 6-digit PINs
 const INITIAL_OPERATIONS: Operation[] = [
   {
     id: 'op-001',
@@ -27,7 +26,6 @@ const INITIAL_DOCUMENTS: Document[] = FIDEICOMISO_TEMPLATES.map((t, i) => ({
 const operations = [...INITIAL_OPERATIONS];
 const documents = [...INITIAL_DOCUMENTS];
 
-// Admin PIN - alfanumeric 6 digits
 export const ADMIN_PIN = 'ADM926';
 
 export function getOperations(): Operation[] {
@@ -46,17 +44,8 @@ export function isAdminPin(pin: string): boolean {
   return pin.toUpperCase() === ADMIN_PIN.toUpperCase();
 }
 
-export function verifyPin(operationId: string, pin: string): boolean {
-  const op = operations.find((o) => o.id === operationId);
-  return op?.pin.toUpperCase() === pin.toUpperCase();
-}
-
 export function getDocuments(operationId: string): Document[] {
   return documents.filter((d) => d.operacion_id === operationId);
-}
-
-export function getDocumentsByCategory(operationId: string, category: DocCategory): Document[] {
-  return documents.filter((d) => d.operacion_id === operationId && d.categoria === category);
 }
 
 export function getProgress(operationId: string): { total: number; completed: number; percent: number } {

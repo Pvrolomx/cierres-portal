@@ -4,28 +4,30 @@ export type OperationType =
   | 'compraventa_directa'
   | 'reconocimiento_fideicomisario';
 
-export const OPERATION_LABELS: Record<OperationType, string> = {
-  fideicomiso: 'Constitución de Fideicomiso',
-  compraventa_escrow: 'Compraventa con Escrow',
-  compraventa_directa: 'Compraventa Directa',
-  reconocimiento_fideicomisario: 'Reconocimiento de Fideicomisario',
+export const OPERATION_LABELS: Record<OperationType, { es: string; en: string }> = {
+  fideicomiso: { es: 'Constitución de Fideicomiso', en: 'Trust Constitution' },
+  compraventa_escrow: { es: 'Compraventa con Escrow', en: 'Purchase with Escrow' },
+  compraventa_directa: { es: 'Compraventa Directa', en: 'Direct Purchase' },
+  reconocimiento_fideicomisario: { es: 'Reconocimiento de Fideicomisario', en: 'Trustee Recognition' },
 };
 
-export type DocCategory = 'comprador' | 'vendedor' | 'propiedad' | 'transaccion';
+export type DocCategory = 'comprador' | 'vendedor' | 'cierre' | 'transaccion';
 
-export const CATEGORY_LABELS: Record<DocCategory, string> = {
-  comprador: 'Comprador',
-  vendedor: 'Vendedor',
-  propiedad: 'Propiedad',
-  transaccion: 'Transacción',
+export const CATEGORY_LABELS: Record<DocCategory, { es: string; en: string }> = {
+  comprador: { es: 'Comprador', en: 'Buyer' },
+  vendedor: { es: 'Vendedor', en: 'Seller' },
+  cierre: { es: 'Documentos de Cierre', en: 'Closing Documents' },
+  transaccion: { es: 'Transacción', en: 'Transaction' },
 };
 
 export const CATEGORY_ICONS: Record<DocCategory, string> = {
   comprador: '👤',
   vendedor: '🏠',
-  propiedad: '📐',
+  cierre: '📐',
   transaccion: '📝',
 };
+
+export type Lang = 'es' | 'en';
 
 export interface Operation {
   id: string;
@@ -41,7 +43,7 @@ export interface Document {
   id: string;
   operacion_id: string;
   categoria: DocCategory;
-  nombre_doc: string;
+  nombre_doc: { es: string; en: string };
   requerido: boolean;
   archivo_url: string | null;
   subido_por: string | null;
@@ -52,33 +54,36 @@ export interface Template {
   id: string;
   tipo_operacion: OperationType;
   categoria: DocCategory;
-  nombre_doc: string;
+  nombre_doc: { es: string; en: string };
   requerido: boolean;
 }
 
 export const FIDEICOMISO_TEMPLATES: Omit<Template, 'id'>[] = [
-  // Comprador
-  { tipo_operacion: 'fideicomiso', categoria: 'comprador', nombre_doc: 'Pasaporte vigente', requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'comprador', nombre_doc: 'Forma migratoria (FM/visa/residencia)', requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'comprador', nombre_doc: 'Comprobante domicilio extranjero (<1 mes)', requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'comprador', nombre_doc: 'KYC firmado', requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'comprador', nombre_doc: 'Acta matrimonio (si aplica)', requerido: false },
-  { tipo_operacion: 'fideicomiso', categoria: 'comprador', nombre_doc: 'Comprobante de fondos', requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'comprador', nombre_doc: 'Designación de fideicomisarios sustitutos', requerido: true },
-  // Vendedor
-  { tipo_operacion: 'fideicomiso', categoria: 'vendedor', nombre_doc: 'INE/Pasaporte', requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'vendedor', nombre_doc: 'CURP', requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'vendedor', nombre_doc: 'RFC / Cédula Fiscal', requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'vendedor', nombre_doc: 'Comprobante domicilio (<1 mes)', requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'vendedor', nombre_doc: 'Escritura de propiedad', requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'vendedor', nombre_doc: 'Predial al corriente', requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'vendedor', nombre_doc: 'Avalúo', requerido: true },
-  // Propiedad
-  { tipo_operacion: 'fideicomiso', categoria: 'propiedad', nombre_doc: 'Reglamento de condominio', requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'propiedad', nombre_doc: 'Catastral', requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'propiedad', nombre_doc: 'Planos', requerido: true },
-  // Transacción
-  { tipo_operacion: 'fideicomiso', categoria: 'transaccion', nombre_doc: 'Oferta firmada', requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'transaccion', nombre_doc: 'Escrow agreement', requerido: true },
-  { tipo_operacion: 'fideicomiso', categoria: 'transaccion', nombre_doc: 'Proyecto de escritura', requerido: true },
+  // Comprador / Buyer
+  { tipo_operacion: 'fideicomiso', categoria: 'comprador', nombre_doc: { es: 'Pasaporte vigente', en: 'Valid passport' }, requerido: true },
+  { tipo_operacion: 'fideicomiso', categoria: 'comprador', nombre_doc: { es: 'Forma migratoria (FM/visa/residencia)', en: 'Immigration form (FM/visa/residency)' }, requerido: true },
+  { tipo_operacion: 'fideicomiso', categoria: 'comprador', nombre_doc: { es: 'Comprobante domicilio extranjero (<1 mes)', en: 'Foreign address proof (<1 month)' }, requerido: true },
+  { tipo_operacion: 'fideicomiso', categoria: 'comprador', nombre_doc: { es: 'KYC firmado', en: 'Signed KYC' }, requerido: true },
+  { tipo_operacion: 'fideicomiso', categoria: 'comprador', nombre_doc: { es: 'Acta matrimonio (si aplica)', en: 'Marriage certificate (if applicable)' }, requerido: false },
+  { tipo_operacion: 'fideicomiso', categoria: 'comprador', nombre_doc: { es: 'Forma de pago', en: 'Payment method' }, requerido: true },
+  { tipo_operacion: 'fideicomiso', categoria: 'comprador', nombre_doc: { es: 'Designación de fideicomisarios sustitutos', en: 'Substitute trustee designation' }, requerido: true },
+  // Vendedor / Seller
+  { tipo_operacion: 'fideicomiso', categoria: 'vendedor', nombre_doc: { es: 'INE/Pasaporte', en: 'ID/Passport' }, requerido: true },
+  { tipo_operacion: 'fideicomiso', categoria: 'vendedor', nombre_doc: { es: 'CURP', en: 'CURP' }, requerido: true },
+  { tipo_operacion: 'fideicomiso', categoria: 'vendedor', nombre_doc: { es: 'RFC / Cédula Fiscal', en: 'RFC / Tax ID' }, requerido: true },
+  { tipo_operacion: 'fideicomiso', categoria: 'vendedor', nombre_doc: { es: 'Comprobante domicilio (<1 mes)', en: 'Address proof (<1 month)' }, requerido: true },
+  { tipo_operacion: 'fideicomiso', categoria: 'vendedor', nombre_doc: { es: 'Acta de Matrimonio', en: 'Marriage Certificate' }, requerido: false },
+  { tipo_operacion: 'fideicomiso', categoria: 'vendedor', nombre_doc: { es: 'Acta de Nacimiento', en: 'Birth Certificate' }, requerido: true },
+  // Documentos de Cierre / Closing Documents
+  { tipo_operacion: 'fideicomiso', categoria: 'cierre', nombre_doc: { es: 'Escritura/Fideicomiso', en: 'Deed/Trust' }, requerido: true },
+  { tipo_operacion: 'fideicomiso', categoria: 'cierre', nombre_doc: { es: 'Régimen de Condominio', en: 'Condo Regime' }, requerido: true },
+  { tipo_operacion: 'fideicomiso', categoria: 'cierre', nombre_doc: { es: 'Certificado de Libertad de Gravamen', en: 'Lien-Free Certificate' }, requerido: true },
+  { tipo_operacion: 'fideicomiso', categoria: 'cierre', nombre_doc: { es: 'Avalúo', en: 'Appraisal' }, requerido: true },
+  { tipo_operacion: 'fideicomiso', categoria: 'cierre', nombre_doc: { es: 'Certificado de No Adeudo de Predial', en: 'Property Tax Clearance' }, requerido: true },
+  { tipo_operacion: 'fideicomiso', categoria: 'cierre', nombre_doc: { es: 'Certificado de No Adeudo de Agua', en: 'Water Bill Clearance' }, requerido: true },
+  { tipo_operacion: 'fideicomiso', categoria: 'cierre', nombre_doc: { es: 'Documentos adicionales', en: 'Additional documents' }, requerido: false },
+  // Transacción / Transaction
+  { tipo_operacion: 'fideicomiso', categoria: 'transaccion', nombre_doc: { es: 'Oferta firmada', en: 'Signed offer' }, requerido: true },
+  { tipo_operacion: 'fideicomiso', categoria: 'transaccion', nombre_doc: { es: 'Escrow agreement', en: 'Escrow agreement' }, requerido: true },
+  { tipo_operacion: 'fideicomiso', categoria: 'transaccion', nombre_doc: { es: 'Proyecto de escritura', en: 'Draft deed' }, requerido: true },
 ];
