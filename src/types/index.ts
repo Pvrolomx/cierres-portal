@@ -82,6 +82,7 @@ export const PERSONA_FISICA_DOCS: { nombre: { es: string; en: string }; requerid
   { nombre: { es: 'KYC firmado', en: 'Signed KYC' }, requerido: true },
   { nombre: { es: 'Forma de pago', en: 'Payment method' }, requerido: false },
   { nombre: { es: 'Designación de fideicomisarios sustitutos', en: 'Substitute trustee designation' }, requerido: false },
+  { nombre: { es: 'Documentos adicionales', en: 'Additional documents' }, requerido: false },
 ];
 
 // Docs for Persona Moral — Empresa
@@ -92,6 +93,7 @@ export const PERSONA_MORAL_EMPRESA_DOCS: { nombre: { es: string; en: string }; r
   { nombre: { es: 'Poder Notarial del apoderado', en: 'Notarized Power of Attorney' }, requerido: true },
   { nombre: { es: 'KYC firmado', en: 'Signed KYC' }, requerido: true },
   { nombre: { es: 'Cédula Fiscal', en: 'Tax Certificate' }, requerido: true },
+  { nombre: { es: 'Documentos adicionales', en: 'Additional documents' }, requerido: false },
 ];
 
 // Docs for Persona Moral — Apoderado (persona física)
@@ -102,6 +104,7 @@ export const PERSONA_MORAL_APODERADO_DOCS: { nombre: { es: string; en: string };
   { nombre: { es: 'Comprobante domicilio (<1 mes)', en: 'Address proof (<1 month)' }, requerido: true },
   { nombre: { es: 'KYC firmado', en: 'Signed KYC' }, requerido: true },
   { nombre: { es: 'Acta de Matrimonio', en: 'Marriage Certificate' }, requerido: false },
+  { nombre: { es: 'Documentos adicionales', en: 'Additional documents' }, requerido: false },
 ];
 
 // General docs (not tied to parties)
@@ -112,13 +115,14 @@ export const CIERRE_DOCS: { nombre: { es: string; en: string }; requerido: boole
   { nombre: { es: 'Avalúo', en: 'Appraisal' }, requerido: true },
   { nombre: { es: 'Certificado de No Adeudo de Predial', en: 'Property Tax Clearance' }, requerido: true },
   { nombre: { es: 'Certificado de No Adeudo de Agua', en: 'Water Bill Clearance' }, requerido: true },
-  { nombre: { es: 'Documentos adicionales', en: 'Additional documents' }, requerido: false },
   { nombre: { es: 'Permiso de Relaciones Exteriores', en: 'Foreign Affairs Permit' }, requerido: true },
+  { nombre: { es: 'Documentos adicionales', en: 'Additional documents' }, requerido: false },
 ];
 
 export const NOTARIO_DOCS: { nombre: { es: string; en: string }; requerido: boolean }[] = [
   { nombre: { es: 'Gastos de cierre', en: 'Closing costs' }, requerido: true },
   { nombre: { es: 'Proyecto de Escritura', en: 'Draft Deed' }, requerido: true },
+  { nombre: { es: 'Documentos adicionales', en: 'Additional documents' }, requerido: false },
 ];
 
 export const ESCROW_DOCS: { nombre: { es: string; en: string }; requerido: boolean }[] = [
@@ -129,4 +133,5 @@ export const ESCROW_DOCS: { nombre: { es: string; en: string }; requerido: boole
   { nombre: { es: 'KYC Comprador', en: 'Buyer KYC' }, requerido: true },
   { nombre: { es: "ID's Comprador", en: "Buyer ID's" }, requerido: true },
   { nombre: { es: 'Carta Distribución', en: 'Distribution Letter' }, requerido: true },
+  { nombre: { es: 'Documentos adicionales', en: 'Additional documents' }, requerido: false },
 ];

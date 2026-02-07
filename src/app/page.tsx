@@ -123,7 +123,7 @@ function DocRow({ doc, onUpload }: { doc: Document; onUpload: (id: string, file:
       <div className="flex-1 min-w-0">
         <p className={`text-sm ${hasFile ? "text-gray-500 line-through" : "text-gray-900"}`}>{doc.nombre_doc[lang]}</p>
         {doc.fecha_subida && <p className="text-xs text-gray-400 mt-0.5">{new Date(doc.fecha_subida).toLocaleDateString(lang === "es" ? "es-MX" : "en-US")}</p>}
-        {!doc.requerido && !hasFile && <p className="text-xs text-amber-500 mt-0.5">{t("optional", lang)}</p>}
+
       </div>
       {hasFile ? (
         <button onClick={handleView}

@@ -78,11 +78,13 @@ function generalDocTemplates(categoria: DocCategory): { es: string; en: string; 
   return (map[categoria] || []).map(d => ({ es: d.nombre.es, en: d.nombre.en, requerido: d.requerido }));
 }
 
-// Ensure docs exist in DB for an operation (auto-generate from templates if missing)
+// Ensure docs exist in DB for an operation (sync from templates — adds missing docs)
 export async function ensureDocs(operation: Operation): Promise<void> {
   if (!supabase) return;
-  const { data: existing } = await supabase.from('documentos').select('id').eq('operacion_id', operation.id).limit(1);
-  if (existing && existing.length > 0) return; // docs already exist
+  const { data: existing } = await supabase.from('documentos').select('nombre_doc_es, party_id, categoria').eq('operacion_id', operation.id);
+  const existingSet = new Set((existing || []).map((d: { nombre_doc_es: string; party_id: string | null; categoria: string | null }) =>
+    `${d.party_id || 'null'}|${d.categoria || 'null'}|${d.nombre_doc_es}`
+  ));
 
   const inserts: { operacion_id: string; party_id: string | null; categoria: string | null; nombre_doc_es: string; nombre_doc_en: string; requerido: boolean }[] = [];
 
@@ -90,7 +92,10 @@ export async function ensureDocs(operation: Operation): Promise<void> {
   for (const party of operation.partes) {
     const templates = generatePartyDocTemplates(party);
     for (const t of templates) {
-      inserts.push({ operacion_id: operation.id, party_id: party.id, categoria: null, nombre_doc_es: t.es, nombre_doc_en: t.en, requerido: t.requerido });
+      const key = `${party.id}|null|${t.es}`;
+      if (!existingSet.has(key)) {
+        inserts.push({ operacion_id: operation.id, party_id: party.id, categoria: null, nombre_doc_es: t.es, nombre_doc_en: t.en, requerido: t.requerido });
+      }
     }
   }
 
@@ -99,11 +104,16 @@ export async function ensureDocs(operation: Operation): Promise<void> {
   for (const cat of cats) {
     const templates = generalDocTemplates(cat);
     for (const t of templates) {
-      inserts.push({ operacion_id: operation.id, party_id: null, categoria: cat, nombre_doc_es: t.es, nombre_doc_en: t.en, requerido: t.requerido });
+      const key = `null|${cat}|${t.es}`;
+      if (!existingSet.has(key)) {
+        inserts.push({ operacion_id: operation.id, party_id: null, categoria: cat, nombre_doc_es: t.es, nombre_doc_en: t.en, requerido: t.requerido });
+      }
     }
   }
 
-  await supabase.from('documentos').insert(inserts);
+  if (inserts.length > 0) {
+    await supabase.from('documentos').insert(inserts);
+  }
 }
 
 export async function getPartyDocs(operationId: string, partyId: string): Promise<Document[]> {
