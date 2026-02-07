@@ -155,7 +155,7 @@ function DocRow({ doc, onUpload, onDelete }: { doc: Document; onUpload: (id: str
 
 
 /* ─── Party Section ─── */
-function PartySection({ party, operationId, onRefresh }: { party: Party; operationId: string; onRefresh: () => void }) {
+function PartySection({ party, operationId, onRefresh, apoderadoName }: { party: Party; operationId: string; onRefresh: () => void; apoderadoName?: string }) {
   const { lang } = useLang();
   const [open, setOpen] = useState(true);
   const [docs, setDocs] = useState<Document[]>([]);
@@ -207,7 +207,7 @@ function PartySection({ party, operationId, onRefresh }: { party: Party; operati
               </div>
               {docs.filter(d => !d.nombre_doc.es.startsWith("(Apoderado)")).map(doc => <DocRow key={doc.id} doc={doc} onUpload={handleUpload} onDelete={handleDelete} />)}
               <div className="px-5 py-2 bg-amber-50/50 border-b border-t border-gray-100">
-                <span className="text-xs font-semibold text-amber-700">👤 {t("apoderado", lang)}</span>
+                <span className="text-xs font-semibold text-amber-700">👤 {apoderadoName || t("apoderado", lang)}</span>
               </div>
               {docs.filter(d => d.nombre_doc.es.startsWith("(Apoderado)")).map(doc => <DocRow key={doc.id} doc={doc} onUpload={handleUpload} onDelete={handleDelete} />)}
             </>
@@ -215,7 +215,7 @@ function PartySection({ party, operationId, onRefresh }: { party: Party; operati
             <>
               {docs.filter(d => !d.nombre_doc.es.startsWith("(Apoderado)")).map(doc => <DocRow key={doc.id} doc={doc} onUpload={handleUpload} onDelete={handleDelete} />)}
               <div className="px-5 py-2 bg-amber-50/50 border-b border-t border-gray-100">
-                <span className="text-xs font-semibold text-amber-700">👤 {t("apoderado", lang)}</span>
+                <span className="text-xs font-semibold text-amber-700">👤 {apoderadoName || t("apoderado", lang)}</span>
               </div>
               {docs.filter(d => d.nombre_doc.es.startsWith("(Apoderado)")).map(doc => <DocRow key={doc.id} doc={doc} onUpload={handleUpload} onDelete={handleDelete} />)}
             </>
@@ -297,6 +297,11 @@ function OperationDashboard({ operation, onLogout, isAdmin, onGoAdmin }: { opera
   };
   const notarioLabel = notarioNames[operation.nombre];
 
+  const apoderadoNames: Record<string, string> = {
+    "Naarena 203": "Apoderado: Sergio Arturo Miramontes Macias",
+  };
+  const apoderadoLabel = apoderadoNames[operation.nombre];
+
   return (
     <div>
       <div className="relative rounded-2xl overflow-hidden mb-6 shadow-lg">
@@ -322,7 +327,7 @@ function OperationDashboard({ operation, onLogout, isAdmin, onGoAdmin }: { opera
       {compradores.length > 0 && (
         <div className="mb-1">
           <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">{PARTY_ROLE_LABELS.comprador[lang]}{compradores.length > 1 ? (lang === "es" ? "es" : "s") : ""}</h3>
-          {compradores.map(p => <PartySection key={p.id} party={p} operationId={operation.id} onRefresh={refreshDocs} />)}
+          {compradores.map(p => <PartySection key={p.id} party={p} operationId={operation.id} onRefresh={refreshDocs} apoderadoName={apoderadoLabel} />)}
         </div>
       )}
       {vendedores.length > 0 && (
