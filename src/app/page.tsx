@@ -288,6 +288,13 @@ function ApoderadoSection({ operationId, partyId, name, onRefresh }: { operation
   const loadDocs = useCallback(async () => {
     const allDocs = await getPartyDocs(operationId, partyId);
     const apodDocs = allDocs.filter(d => d.nombre_doc.es.startsWith("(Apoderado)"));
+    // Sort: Poder Notarial and Documentos adicionales go last
+    const sortOrder = (d: Document) => {
+      if (d.nombre_doc.es.includes("Poder Notarial")) return 98;
+      if (d.nombre_doc.es.includes("Documentos adicionales")) return 99;
+      return 0;
+    };
+    apodDocs.sort((a, b) => sortOrder(a) - sortOrder(b));
     setDocs(apodDocs);
     const reqDocs = apodDocs.filter(d => d.requerido);
     const completedReq = reqDocs.filter(d => d.archivo_url !== null).length;
