@@ -155,7 +155,7 @@ function DocRow({ doc, onUpload, onDelete }: { doc: Document; onUpload: (id: str
 
 
 /* ─── Party Section ─── */
-function PartySection({ party, operationId, onRefresh, apoderadoName }: { party: Party; operationId: string; onRefresh: () => void; apoderadoName?: string }) {
+function PartySection({ party, operationId, onRefresh, apoderadoName, hideApoderado }: { party: Party; operationId: string; onRefresh: () => void; apoderadoName?: string; hideApoderado?: boolean }) {
   const { lang } = useLang();
   const [open, setOpen] = useState(true);
   const [docs, setDocs] = useState<Document[]>([]);
@@ -206,11 +206,15 @@ function PartySection({ party, operationId, onRefresh, apoderadoName }: { party:
                 <span className="text-xs font-semibold text-[#1e3a5f]">🏢 {t("empresa", lang)}</span>
               </div>
               {docs.filter(d => !d.nombre_doc.es.startsWith("(Apoderado)")).map(doc => <DocRow key={doc.id} doc={doc} onUpload={handleUpload} onDelete={handleDelete} />)}
+              {!hideApoderado && (<>
               <div className="px-5 py-2 bg-amber-50/50 border-b border-t border-gray-100">
                 <span className="text-xs font-semibold text-amber-700">👤 {apoderadoName || t("apoderado", lang)}</span>
               </div>
               {docs.filter(d => d.nombre_doc.es.startsWith("(Apoderado)")).map(doc => <DocRow key={doc.id} doc={doc} onUpload={handleUpload} onDelete={handleDelete} />)}
             </>
+              </>)}
+          ) : hideApoderado ? (
+            docs.filter(d => !d.nombre_doc.es.startsWith("(Apoderado)")).map(doc => <DocRow key={doc.id} doc={doc} onUpload={handleUpload} onDelete={handleDelete} />)
           ) : docs.some(d => d.nombre_doc.es.startsWith("(Apoderado)")) ? (
             <>
               {docs.filter(d => !d.nombre_doc.es.startsWith("(Apoderado)")).map(doc => <DocRow key={doc.id} doc={doc} onUpload={handleUpload} onDelete={handleDelete} />)}
@@ -272,6 +276,64 @@ function GeneralSection({ operationId, categoria, onRefresh, label }: { operatio
 }
 
 /* ─── Operation Dashboard ─── */
+
+/* --- Standalone Apoderado Section --- */
+function ApoderadoSection({ operationId, partyId, name, onRefresh }: { operationId: string; partyId: string; name: string; onRefresh: () => void }) {
+  const { lang } = useLang();
+  const [open, setOpen] = useState(true);
+  const [docs, setDocs] = useState<Document[]>([]);
+  const [prog, setProg] = useState({ total: 0, completed: 0, percent: 0 });
+
+  const loadDocs = useCallback(async () => {
+    const allDocs = await getPartyDocs(operationId, partyId);
+    const apodDocs = allDocs.filter(d => d.nombre_doc.es.startsWith("(Apoderado)"));
+    setDocs(apodDocs);
+    const completed = apodDocs.filter(d => d.archivo_url !== null).length;
+    const total = apodDocs.filter(d => d.requerido).length;
+    const completedReq = apodDocs.filter(d => d.requerido && d.archivo_url !== null).length;
+    setProg({ total, completed: completedReq, percent: total > 0 ? Math.round((completedReq / total) * 100) : 0 });
+  }, [operationId, partyId]);
+
+  useEffect(() => { loadDocs(); }, [loadDocs]);
+
+  const handleUpload = async (docId: string, file: File) => {
+    await uploadDocument(docId, file);
+    await loadDocs();
+    onRefresh();
+  };
+
+  const handleDelete = async (docId: string, path: string) => {
+    await deleteDocumentFile(docId, path);
+    await loadDocs();
+    onRefresh();
+  };
+
+  if (docs.length === 0) return null;
+
+  const allDone = prog.completed === prog.total && prog.total > 0;
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-3 overflow-hidden">
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50/50 transition-colors">
+        <div className="flex items-center gap-3">
+          <span className="text-lg">👤</span>
+          <div className="text-left">
+            <span className="text-sm font-semibold text-gray-800">{name}</span>
+            <span className="text-xs text-gray-400 ml-2">{t("apoderado", lang)}</span>
+          </div>
+          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${allDone ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>{prog.completed}/{prog.total}</span>
+        </div>
+        <span className={`text-gray-400 transition-transform text-xs ${open ? "rotate-180" : ""}`}>▼</span>
+      </button>
+      {open && (
+        <div className="border-t border-gray-100">
+          {docs.map(doc => <DocRow key={doc.id} doc={doc} onUpload={handleUpload} onDelete={handleDelete} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function OperationDashboard({ operation, onLogout, isAdmin, onGoAdmin }: { operation: Operation; onLogout: () => void; isAdmin?: boolean; onGoAdmin?: () => void }) {
   const { lang } = useLang();
   const [ready, setReady] = useState(false);
@@ -327,13 +389,19 @@ function OperationDashboard({ operation, onLogout, isAdmin, onGoAdmin }: { opera
       {compradores.length > 0 && (
         <div className="mb-1">
           <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">{PARTY_ROLE_LABELS.comprador[lang]}{compradores.length > 1 ? (lang === "es" ? "es" : "s") : ""}</h3>
-          {compradores.map(p => <PartySection key={p.id} party={p} operationId={operation.id} onRefresh={refreshDocs} apoderadoName={apoderadoLabel} />)}
+          {compradores.map(p => <PartySection key={p.id} party={p} operationId={operation.id} onRefresh={refreshDocs} apoderadoName={apoderadoLabel} hideApoderado={!!apoderadoLabel} />)}
+        </div>
+      )}
+      {apoderadoLabel && compradores.length > 0 && (
+        <div className="mb-1 mt-4">
+          <h3 className="text-xs font-semibold text-amber-600 uppercase tracking-wider mb-2 px-1">{t("apoderado", lang)}</h3>
+          <ApoderadoSection operationId={operation.id} partyId={compradores[0].id} name={apoderadoLabel} onRefresh={refreshDocs} />
         </div>
       )}
       {vendedores.length > 0 && (
         <div className="mb-1 mt-4">
           <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">{PARTY_ROLE_LABELS.vendedor[lang]}{vendedores.length > 1 ? (lang === "es" ? "es" : "s") : ""}</h3>
-          {vendedores.map(p => <PartySection key={p.id} party={p} operationId={operation.id} onRefresh={refreshDocs} apoderadoName={apoderadoLabel} />)}
+          {vendedores.map(p => <PartySection key={p.id} party={p} operationId={operation.id} onRefresh={refreshDocs} />)}
         </div>
       )}
       <div className="mt-4">
