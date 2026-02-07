@@ -28,7 +28,7 @@ export type DocCategory = 'cierre' | 'notario' | 'escrow';
 
 export const CATEGORY_LABELS: Record<DocCategory, { es: string; en: string }> = {
   cierre: { es: 'Documentos de Cierre', en: 'Closing Documents' },
-  notario: { es: 'Notario', en: 'Notary' },
+  notario: { es: 'Notaría 10 PV', en: 'Notaría 10 PV' },
   escrow: { es: 'Escrow', en: 'Escrow' },
 };
 
