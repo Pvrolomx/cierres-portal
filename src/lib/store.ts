@@ -123,8 +123,8 @@ export async function getGeneralDocs(operationId: string, categoria: DocCategory
   // Sort: Documentos adicionales always last, Proyecto de Escritura after Información Bancaria
   const sortOrder = (d: Document) => {
     const name = d.nombre_doc.es;
-    if (name.includes('Bancaria')) return 0;
-    if (name.includes('Gastos')) return 1;
+    if (name.includes('Gastos')) return 0;
+    if (name.includes('Bancaria')) return 1;
     if (name.includes('Proyecto')) return 2;
     if (name.includes('Documentos adicionales')) return 99;
     return 50;
