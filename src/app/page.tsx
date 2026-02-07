@@ -206,15 +206,17 @@ function PartySection({ party, operationId, onRefresh, apoderadoName, hideApoder
                 <span className="text-xs font-semibold text-[#1e3a5f]">🏢 {t("empresa", lang)}</span>
               </div>
               {docs.filter(d => !d.nombre_doc.es.startsWith("(Apoderado)")).map(doc => <DocRow key={doc.id} doc={doc} onUpload={handleUpload} onDelete={handleDelete} />)}
-              {!hideApoderado && (<>
-              <div className="px-5 py-2 bg-amber-50/50 border-b border-t border-gray-100">
-                <span className="text-xs font-semibold text-amber-700">👤 {apoderadoName || t("apoderado", lang)}</span>
-              </div>
-              {docs.filter(d => d.nombre_doc.es.startsWith("(Apoderado)")).map(doc => <DocRow key={doc.id} doc={doc} onUpload={handleUpload} onDelete={handleDelete} />)}
+              {!hideApoderado && docs.some(d => d.nombre_doc.es.startsWith("(Apoderado)")) && (
+                <>
+                  <div className="px-5 py-2 bg-amber-50/50 border-b border-t border-gray-100">
+                    <span className="text-xs font-semibold text-amber-700">👤 {apoderadoName || t("apoderado", lang)}</span>
+                  </div>
+                  {docs.filter(d => d.nombre_doc.es.startsWith("(Apoderado)")).map(doc => <DocRow key={doc.id} doc={doc} onUpload={handleUpload} onDelete={handleDelete} />)}
+                </>
+              )}
             </>
-              </>)}
           ) : hideApoderado ? (
-            docs.filter(d => !d.nombre_doc.es.startsWith("(Apoderado)")).map(doc => <DocRow key={doc.id} doc={doc} onUpload={handleUpload} onDelete={handleDelete} />)
+            <>{docs.filter(d => !d.nombre_doc.es.startsWith("(Apoderado)")).map(doc => <DocRow key={doc.id} doc={doc} onUpload={handleUpload} onDelete={handleDelete} />)}</>
           ) : docs.some(d => d.nombre_doc.es.startsWith("(Apoderado)")) ? (
             <>
               {docs.filter(d => !d.nombre_doc.es.startsWith("(Apoderado)")).map(doc => <DocRow key={doc.id} doc={doc} onUpload={handleUpload} onDelete={handleDelete} />)}
@@ -275,9 +277,8 @@ function GeneralSection({ operationId, categoria, onRefresh, label }: { operatio
   );
 }
 
-/* ─── Operation Dashboard ─── */
 
-/* --- Standalone Apoderado Section --- */
+/* ─── Standalone Apoderado Section ─── */
 function ApoderadoSection({ operationId, partyId, name, onRefresh }: { operationId: string; partyId: string; name: string; onRefresh: () => void }) {
   const { lang } = useLang();
   const [open, setOpen] = useState(true);
@@ -288,10 +289,9 @@ function ApoderadoSection({ operationId, partyId, name, onRefresh }: { operation
     const allDocs = await getPartyDocs(operationId, partyId);
     const apodDocs = allDocs.filter(d => d.nombre_doc.es.startsWith("(Apoderado)"));
     setDocs(apodDocs);
-    const completed = apodDocs.filter(d => d.archivo_url !== null).length;
-    const total = apodDocs.filter(d => d.requerido).length;
-    const completedReq = apodDocs.filter(d => d.requerido && d.archivo_url !== null).length;
-    setProg({ total, completed: completedReq, percent: total > 0 ? Math.round((completedReq / total) * 100) : 0 });
+    const reqDocs = apodDocs.filter(d => d.requerido);
+    const completedReq = reqDocs.filter(d => d.archivo_url !== null).length;
+    setProg({ total: reqDocs.length, completed: completedReq, percent: reqDocs.length > 0 ? Math.round((completedReq / reqDocs.length) * 100) : 0 });
   }, [operationId, partyId]);
 
   useEffect(() => { loadDocs(); }, [loadDocs]);
@@ -334,6 +334,7 @@ function ApoderadoSection({ operationId, partyId, name, onRefresh }: { operation
   );
 }
 
+/* ─── Operation Dashboard ─── */
 function OperationDashboard({ operation, onLogout, isAdmin, onGoAdmin }: { operation: Operation; onLogout: () => void; isAdmin?: boolean; onGoAdmin?: () => void }) {
   const { lang } = useLang();
   const [ready, setReady] = useState(false);
