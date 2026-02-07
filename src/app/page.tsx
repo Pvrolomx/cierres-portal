@@ -307,7 +307,7 @@ function OperationDashboard({ operation, onLogout, isAdmin, onGoAdmin }: { opera
 
       {compradores.length > 0 && (
         <div className="mb-1">
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">{PARTY_ROLE_LABELS.comprador[lang]}{compradores.length > 1 ? "s" : ""}</h3>
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">{PARTY_ROLE_LABELS.comprador[lang]}{compradores.length > 1 ? (lang === "es" ? "es" : "s") : ""}</h3>
           {compradores.map(p => <PartySection key={p.id} party={p} operationId={operation.id} onRefresh={refreshDocs} />)}
         </div>
       )}
