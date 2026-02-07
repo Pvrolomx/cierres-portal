@@ -1,0 +1,50 @@
+{
+  "nombre": "Compraventa Directa Condo Nacional",
+  "tipo": "compraventa_directa",
+  "notas": "Sin escrow (pagos directos). Compradores mexicanos representados por apoderado. Condo: cuota de mantenimiento incluye agua, no requiere CDNA de agua por separado. Sin permiso SRE (no hay extranjeros).",
+  "secciones": {
+    "persona_fisica_con_apoderado": [
+      { "es": "INE vigente", "en": "Valid INE/ID", "requerido": true },
+      { "es": "CURP", "en": "CURP", "requerido": true },
+      { "es": "RFC / Cédula Fiscal", "en": "RFC / Tax ID", "requerido": true },
+      { "es": "Comprobante domicilio (<3 meses)", "en": "Address proof (<3 months)", "requerido": true },
+      { "es": "Acta de Nacimiento", "en": "Birth Certificate", "requerido": true },
+      { "es": "Acta de Matrimonio", "en": "Marriage Certificate", "requerido": false },
+      { "es": "Poder Notarial", "en": "Notarized Power of Attorney", "requerido": true },
+      { "es": "INE del Apoderado", "en": "Attorney ID", "requerido": true },
+      { "es": "Forma de pago", "en": "Payment method", "requerido": false },
+      { "es": "Documentos adicionales", "en": "Additional documents", "requerido": false }
+    ],
+    "persona_moral_empresa": [
+      { "es": "Acta Constitutiva", "en": "Articles of Incorporation", "requerido": true },
+      { "es": "RFC de la empresa", "en": "Company Tax ID", "requerido": true },
+      { "es": "Comprobante domicilio fiscal", "en": "Fiscal address proof", "requerido": true },
+      { "es": "Poder Notarial del apoderado", "en": "Notarized Power of Attorney", "requerido": true },
+      { "es": "KYC firmado", "en": "Signed KYC", "requerido": true },
+      { "es": "Cédula Fiscal", "en": "Tax Certificate", "requerido": true },
+      { "es": "Documentos adicionales", "en": "Additional documents", "requerido": false }
+    ],
+    "persona_moral_apoderado": [
+      { "es": "INE vigente", "en": "Valid INE/ID", "requerido": true },
+      { "es": "CURP", "en": "CURP", "requerido": true },
+      { "es": "RFC / Cédula Fiscal", "en": "RFC / Tax ID", "requerido": true },
+      { "es": "Comprobante domicilio (<3 meses)", "en": "Address proof (<3 months)", "requerido": true },
+      { "es": "KYC firmado", "en": "Signed KYC", "requerido": true },
+      { "es": "Documentos adicionales", "en": "Additional documents", "requerido": false }
+    ],
+    "cierre": [
+      { "es": "Escritura de Propiedad", "en": "Property Deed", "requerido": true },
+      { "es": "Régimen de Condominio", "en": "Condo Regime", "requerido": true },
+      { "es": "Certificado de Libertad de Gravamen", "en": "Lien-Free Certificate", "requerido": true },
+      { "es": "Avalúo", "en": "Appraisal", "requerido": true },
+      { "es": "Certificado de No Adeudo de Predial", "en": "Property Tax Clearance", "requerido": true },
+      { "es": "Constancia de No Adeudo de Cuotas Condominales", "en": "Condo Fees Clearance", "requerido": true },
+      { "es": "Documentos adicionales", "en": "Additional documents", "requerido": false }
+    ],
+    "notario": [
+      { "es": "Gastos de cierre", "en": "Closing costs", "requerido": true },
+      { "es": "Proyecto de Escritura", "en": "Draft Deed", "requerido": true },
+      { "es": "Documentos adicionales", "en": "Additional documents", "requerido": false }
+    ]
+  }
+}

@@ -221,7 +221,7 @@ function PartySection({ party, operationId, onRefresh }: { party: Party; operati
 }
 
 /* ─── General Section ─── */
-function GeneralSection({ operationId, categoria, onRefresh }: { operationId: string; categoria: DocCategory; onRefresh: () => void }) {
+function GeneralSection({ operationId, categoria, onRefresh, label }: { operationId: string; categoria: DocCategory; onRefresh: () => void; label?: string }) {
   const { lang } = useLang();
   const [open, setOpen] = useState(true);
   const [docs, setDocs] = useState<Document[]>([]);
@@ -253,7 +253,7 @@ function GeneralSection({ operationId, categoria, onRefresh }: { operationId: st
       <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50/50 transition-colors">
         <div className="flex items-center gap-3">
           <span className="text-lg">{CATEGORY_ICONS[categoria]}</span>
-          <span className="text-sm font-semibold text-gray-800">{CATEGORY_LABELS[categoria][lang]}</span>
+          <span className="text-sm font-semibold text-gray-800">{label || CATEGORY_LABELS[categoria][lang]}</span>
           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${allDone ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>{completed}/{docs.length}</span>
         </div>
         <span className={`text-gray-400 transition-transform text-xs ${open ? "rotate-180" : ""}`}>▼</span>
@@ -282,6 +282,12 @@ function OperationDashboard({ operation, onLogout, isAdmin, onGoAdmin }: { opera
   const vendedores = operation.partes.filter(p => p.rol === "vendedor");
 
   if (!ready) return <div className="text-center py-20 text-gray-400">{t("loading", lang)}</div>;
+
+  const notarioNames: Record<string, string> = {
+    "Artisan 201": "Notaría 10 PV",
+    "Naarena 203": "Notaría 29 Bucerias",
+  };
+  const notarioLabel = notarioNames[operation.nombre];
 
   return (
     <div>
@@ -318,7 +324,7 @@ function OperationDashboard({ operation, onLogout, isAdmin, onGoAdmin }: { opera
         </div>
       )}
       <div className="mt-4">
-        {generalCats.map(cat => <GeneralSection key={cat} operationId={operation.id} categoria={cat} onRefresh={refreshDocs} />)}
+        {generalCats.map(cat => <GeneralSection key={cat} operationId={operation.id} categoria={cat} onRefresh={refreshDocs} label={cat === "notario" ? notarioLabel : undefined} />)}
       </div>
     </div>
   );
