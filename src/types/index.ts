@@ -85,6 +85,10 @@ export const PERSONA_FISICA_DOCS: { nombre: { es: string; en: string }; requerid
   { nombre: { es: 'Documentos adicionales', en: 'Additional documents' }, requerido: false },
 ];
 
+// Docs for Apoderado de Persona Física (same as PERSONA_FISICA minus Forma de pago)
+export const PERSONA_FISICA_APODERADO_DOCS: { nombre: { es: string; en: string }; requerido: boolean }[] = 
+  PERSONA_FISICA_DOCS.filter(d => d.nombre.es !== 'Forma de pago');
+
 // Docs for Persona Moral — Empresa
 export const PERSONA_MORAL_EMPRESA_DOCS: { nombre: { es: string; en: string }; requerido: boolean }[] = [
   { nombre: { es: 'Acta Constitutiva', en: 'Articles of Incorporation' }, requerido: true },

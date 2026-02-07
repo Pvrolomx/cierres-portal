@@ -1,6 +1,6 @@
 import {
   Operation, Document, Party, DocCategory,
-  PERSONA_FISICA_DOCS, PERSONA_MORAL_EMPRESA_DOCS, PERSONA_MORAL_APODERADO_DOCS,
+  PERSONA_FISICA_DOCS, PERSONA_FISICA_APODERADO_DOCS, PERSONA_MORAL_EMPRESA_DOCS, PERSONA_MORAL_APODERADO_DOCS,
   CIERRE_DOCS, NOTARIO_DOCS, ESCROW_DOCS,
 } from '@/types';
 import { supabase } from './supabase';
@@ -65,7 +65,9 @@ export async function findOperationByPin(pin: string): Promise<Operation | undef
 // Generate docs for a party from templates (used when no docs exist in DB yet)
 function generatePartyDocTemplates(party: Party): { es: string; en: string; requerido: boolean }[] {
   if (party.tipo === 'fisica') {
-    return PERSONA_FISICA_DOCS.map(d => ({ es: d.nombre.es, en: d.nombre.en, requerido: d.requerido }));
+    const personal = PERSONA_FISICA_DOCS.map(d => ({ es: d.nombre.es, en: d.nombre.en, requerido: d.requerido }));
+    const apoderado = PERSONA_FISICA_APODERADO_DOCS.map(d => ({ es: `(Apoderado) ${d.nombre.es}`, en: `(Attorney) ${d.nombre.en}`, requerido: d.requerido }));
+    return [...personal, ...apoderado];
   } else {
     const empresa = PERSONA_MORAL_EMPRESA_DOCS.map(d => ({ es: d.nombre.es, en: d.nombre.en, requerido: d.requerido }));
     const apoderado = PERSONA_MORAL_APODERADO_DOCS.map(d => ({ es: `(Apoderado) ${d.nombre.es}`, en: `(Attorney) ${d.nombre.en}`, requerido: d.requerido }));
