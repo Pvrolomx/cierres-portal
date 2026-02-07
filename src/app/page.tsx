@@ -7,7 +7,7 @@ import {
 } from "@/types";
 import {
   getOperations, getProgress, findOperationByPin, isAdminPin,
-  uploadDocument, getPartyDocs, getGeneralDocs, getPartyProgress, ensureDocs,
+  uploadDocument, getPartyDocs, getGeneralDocs, getPartyProgress, ensureDocs, getSignedUrl,
 } from "@/lib/store";
 
 const LangContext = createContext<{ lang: Lang; toggle: () => void }>({ lang: "es", toggle: () => {} });
@@ -108,6 +108,13 @@ function DocRow({ doc, onUpload }: { doc: Document; onUpload: (id: string, file:
     setUploading(false);
   };
 
+  const handleView = async () => {
+    if (!doc.archivo_url) return;
+    const url = await getSignedUrl(doc.archivo_url);
+    if (url) window.open(url, '_blank');
+    else alert(lang === 'es' ? 'Error al abrir archivo' : 'Error opening file');
+  };
+
   return (
     <div className="flex items-center gap-3 py-3 px-4 border-b border-gray-100 last:border-0 hover:bg-gray-50/50 transition-colors">
       <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs flex-shrink-0 ${hasFile ? "bg-emerald-100 text-emerald-600" : "bg-red-50 text-red-400"}`}>
@@ -119,10 +126,10 @@ function DocRow({ doc, onUpload }: { doc: Document; onUpload: (id: string, file:
         {!doc.requerido && !hasFile && <p className="text-xs text-amber-500 mt-0.5">{t("optional", lang)}</p>}
       </div>
       {hasFile ? (
-        <a href={doc.archivo_url || "#"} target="_blank" rel="noopener noreferrer"
+        <button onClick={handleView}
           className="text-xs text-gray-500 hover:text-[#1e3a5f] px-3 py-1.5 rounded-lg border border-gray-200 hover:border-[#1e3a5f] transition-colors">
           {t("view", lang)}
-        </a>
+        </button>
       ) : (
         <label className={`text-xs px-3 py-1.5 rounded-lg transition-colors shadow-sm cursor-pointer ${uploading ? "bg-gray-300 text-gray-500" : "bg-[#1e3a5f] hover:bg-[#2a4d7a] text-white"}`}>
           {uploading ? t("uploading", lang) : t("upload", lang)}

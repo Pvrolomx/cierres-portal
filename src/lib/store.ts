@@ -141,16 +141,23 @@ export async function uploadDocument(docId: string, file: File): Promise<string 
   const path = `${docId}/${file.name}`;
   const { error } = await supabase.storage.from('cierres-docs').upload(path, file, { upsert: true });
   if (error) { console.error('Upload error:', error); return null; }
-  const { data: urlData } = supabase.storage.from('cierres-docs').getPublicUrl(path);
-  const url = urlData.publicUrl;
 
+  // Store the storage path (not a public URL) since the bucket is private
   await supabase.from('documentos').update({
-    archivo_url: url,
+    archivo_url: path,
     subido_por: 'usuario',
     fecha_subida: new Date().toISOString(),
   }).eq('id', docId);
 
-  return url;
+  return path;
+}
+
+// Generate a temporary signed URL for viewing files from the private bucket
+export async function getSignedUrl(storagePath: string): Promise<string | null> {
+  if (!supabase || !storagePath) return null;
+  const { data, error } = await supabase.storage.from('cierres-docs').createSignedUrl(storagePath, 3600);
+  if (error) { console.error('Signed URL error:', error); return null; }
+  return data.signedUrl;
 }
 
 function mapDoc(d: { id: string; operacion_id: string; party_id: string | null; categoria: string | null; nombre_doc_es: string; nombre_doc_en: string; requerido: boolean; archivo_url: string | null; subido_por: string | null; fecha_subida: string | null }): Document {
