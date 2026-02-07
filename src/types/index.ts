@@ -114,7 +114,7 @@ export const CIERRE_DOCS: { nombre: { es: string; en: string }; requerido: boole
   { nombre: { es: 'Certificado de Libertad de Gravamen', en: 'Lien-Free Certificate' }, requerido: true },
   { nombre: { es: 'Avalúo', en: 'Appraisal' }, requerido: true },
   { nombre: { es: 'Certificado de No Adeudo de Predial', en: 'Property Tax Clearance' }, requerido: true },
-  { nombre: { es: 'Certificado de No Adeudo de Agua', en: 'Water Bill Clearance' }, requerido: true },
+  { nombre: { es: 'Constancia de No Adeudo de Cuotas Condominales', en: 'Condo Fees Clearance' }, requerido: true },
   { nombre: { es: 'Permiso de Relaciones Exteriores', en: 'Foreign Affairs Permit' }, requerido: true },
   { nombre: { es: 'Documentos adicionales', en: 'Additional documents' }, requerido: false },
 ];
