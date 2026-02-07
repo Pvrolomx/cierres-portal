@@ -266,23 +266,17 @@ function GeneralSection({ operationId, categoria, onRefresh }: { operationId: st
 /* ─── Operation Dashboard ─── */
 function OperationDashboard({ operation, onLogout, isAdmin, onGoAdmin }: { operation: Operation; onLogout: () => void; isAdmin?: boolean; onGoAdmin?: () => void }) {
   const { lang } = useLang();
-  const [progress, setProgress] = useState({ total: 0, completed: 0, percent: 0 });
   const [ready, setReady] = useState(false);
   const generalCats: DocCategory[] = ["cierre", "notario", "escrow"];
 
   useEffect(() => {
     (async () => {
       await ensureDocs(operation);
-      const p = await getProgress(operation.id);
-      setProgress(p);
       setReady(true);
     })();
   }, [operation]);
 
-  const refreshProgress = async () => {
-    const p = await getProgress(operation.id);
-    setProgress(p);
-  };
+  const refreshDocs = () => {};
 
   const compradores = operation.partes.filter(p => p.rol === "comprador");
   const vendedores = operation.partes.filter(p => p.rol === "vendedor");
@@ -314,17 +308,17 @@ function OperationDashboard({ operation, onLogout, isAdmin, onGoAdmin }: { opera
       {compradores.length > 0 && (
         <div className="mb-1">
           <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">{PARTY_ROLE_LABELS.comprador[lang]}{compradores.length > 1 ? "s" : ""}</h3>
-          {compradores.map(p => <PartySection key={p.id} party={p} operationId={operation.id} onRefresh={refreshProgress} />)}
+          {compradores.map(p => <PartySection key={p.id} party={p} operationId={operation.id} onRefresh={refreshDocs} />)}
         </div>
       )}
       {vendedores.length > 0 && (
         <div className="mb-1 mt-4">
           <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">{PARTY_ROLE_LABELS.vendedor[lang]}{vendedores.length > 1 ? (lang === "es" ? "es" : "s") : ""}</h3>
-          {vendedores.map(p => <PartySection key={p.id} party={p} operationId={operation.id} onRefresh={refreshProgress} />)}
+          {vendedores.map(p => <PartySection key={p.id} party={p} operationId={operation.id} onRefresh={refreshDocs} />)}
         </div>
       )}
       <div className="mt-4">
-        {generalCats.map(cat => <GeneralSection key={cat} operationId={operation.id} categoria={cat} onRefresh={refreshProgress} />)}
+        {generalCats.map(cat => <GeneralSection key={cat} operationId={operation.id} categoria={cat} onRefresh={refreshDocs} />)}
       </div>
     </div>
   );
