@@ -119,7 +119,18 @@ export async function getPartyDocs(operationId: string, partyId: string): Promis
 export async function getGeneralDocs(operationId: string, categoria: DocCategory): Promise<Document[]> {
   if (!supabase) return [];
   const { data } = await supabase.from('documentos').select('*').eq('operacion_id', operationId).eq('categoria', categoria).is('party_id', null);
-  return (data || []).map(mapDoc);
+  const docs = (data || []).map(mapDoc);
+  // Sort: Documentos adicionales always last, Proyecto de Escritura after Información Bancaria
+  const sortOrder = (d: Document) => {
+    const name = d.nombre_doc.es;
+    if (name.includes('Gastos')) return 0;
+    if (name.includes('Bancaria')) return 1;
+    if (name.includes('Proyecto')) return 2;
+    if (name.includes('Documentos adicionales')) return 99;
+    return 50;
+  };
+  docs.sort((a, b) => sortOrder(a) - sortOrder(b));
+  return docs;
 }
 
 export async function getProgress(operationId: string): Promise<{ total: number; completed: number; percent: number }> {
