@@ -1,0 +1,53 @@
+{
+  "nombre": "Constitución de Fideicomiso Persona Moral",
+  "tipo": "fideicomiso",
+  "notas": "Sin escrow. Venta en preconstrucción donde el desarrollador utiliza los depósitos iniciales para financiar el desarrollo.",
+  "secciones": {
+    "persona_fisica": [
+      { "es": "Pasaporte vigente / INE", "en": "Valid passport / ID", "requerido": true },
+      { "es": "Forma migratoria (FM/visa/residencia)", "en": "Immigration form (FM/visa/residency)", "requerido": false },
+      { "es": "CURP", "en": "CURP", "requerido": true },
+      { "es": "RFC / Cédula Fiscal", "en": "RFC / Tax ID", "requerido": true },
+      { "es": "Comprobante domicilio (<1 mes)", "en": "Address proof (<1 month)", "requerido": true },
+      { "es": "Acta de Matrimonio", "en": "Marriage Certificate", "requerido": false },
+      { "es": "Acta de Nacimiento", "en": "Birth Certificate", "requerido": false },
+      { "es": "KYC firmado", "en": "Signed KYC", "requerido": true },
+      { "es": "Forma de pago", "en": "Payment method", "requerido": false },
+      { "es": "Designación de fideicomisarios sustitutos", "en": "Substitute trustee designation", "requerido": false },
+      { "es": "Documentos adicionales", "en": "Additional documents", "requerido": false }
+    ],
+    "persona_moral_empresa": [
+      { "es": "Acta Constitutiva", "en": "Articles of Incorporation", "requerido": true },
+      { "es": "RFC de la empresa", "en": "Company Tax ID", "requerido": true },
+      { "es": "Comprobante domicilio fiscal", "en": "Fiscal address proof", "requerido": true },
+      { "es": "Poder Notarial del apoderado", "en": "Notarized Power of Attorney", "requerido": true },
+      { "es": "KYC firmado", "en": "Signed KYC", "requerido": true },
+      { "es": "Cédula Fiscal", "en": "Tax Certificate", "requerido": true },
+      { "es": "Documentos adicionales", "en": "Additional documents", "requerido": false }
+    ],
+    "persona_moral_apoderado": [
+      { "es": "Pasaporte vigente / INE", "en": "Valid passport / ID", "requerido": true },
+      { "es": "CURP", "en": "CURP", "requerido": true },
+      { "es": "RFC / Cédula Fiscal", "en": "RFC / Tax ID", "requerido": true },
+      { "es": "Comprobante domicilio (<1 mes)", "en": "Address proof (<1 month)", "requerido": true },
+      { "es": "KYC firmado", "en": "Signed KYC", "requerido": true },
+      { "es": "Acta de Matrimonio", "en": "Marriage Certificate", "requerido": false },
+      { "es": "Documentos adicionales", "en": "Additional documents", "requerido": false }
+    ],
+    "cierre": [
+      { "es": "Escritura/Fideicomiso", "en": "Deed/Trust", "requerido": true },
+      { "es": "Régimen de Condominio", "en": "Condo Regime", "requerido": true },
+      { "es": "Certificado de Libertad de Gravamen", "en": "Lien-Free Certificate", "requerido": true },
+      { "es": "Avalúo", "en": "Appraisal", "requerido": true },
+      { "es": "Certificado de No Adeudo de Predial", "en": "Property Tax Clearance", "requerido": true },
+      { "es": "Constancia de No Adeudo de Cuotas Condominales", "en": "Condo Fees Clearance", "requerido": true },
+      { "es": "Permiso de Relaciones Exteriores", "en": "Foreign Affairs Permit", "requerido": true },
+      { "es": "Documentos adicionales", "en": "Additional documents", "requerido": false }
+    ],
+    "notario": [
+      { "es": "Gastos de cierre", "en": "Closing costs", "requerido": true },
+      { "es": "Proyecto de Escritura", "en": "Draft Deed", "requerido": true },
+      { "es": "Documentos adicionales", "en": "Additional documents", "requerido": false }
+    ]
+  }
+}

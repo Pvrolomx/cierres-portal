@@ -267,7 +267,7 @@ function GeneralSection({ operationId, categoria, onRefresh }: { operationId: st
 function OperationDashboard({ operation, onLogout, isAdmin, onGoAdmin }: { operation: Operation; onLogout: () => void; isAdmin?: boolean; onGoAdmin?: () => void }) {
   const { lang } = useLang();
   const [ready, setReady] = useState(false);
-  const generalCats: DocCategory[] = ["cierre", "notario", "escrow"];
+  const generalCats: DocCategory[] = ["cierre", "notario"];
 
   useEffect(() => {
     (async () => {

@@ -100,7 +100,7 @@ export async function ensureDocs(operation: Operation): Promise<void> {
   }
 
   // General docs
-  const cats: DocCategory[] = ['cierre', 'notario', 'escrow'];
+  const cats: DocCategory[] = ['cierre', 'notario'];
   for (const cat of cats) {
     const templates = generalDocTemplates(cat);
     for (const t of templates) {
