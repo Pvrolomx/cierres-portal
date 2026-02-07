@@ -333,7 +333,7 @@ function OperationDashboard({ operation, onLogout, isAdmin, onGoAdmin }: { opera
       {vendedores.length > 0 && (
         <div className="mb-1 mt-4">
           <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">{PARTY_ROLE_LABELS.vendedor[lang]}{vendedores.length > 1 ? (lang === "es" ? "es" : "s") : ""}</h3>
-          {vendedores.map(p => <PartySection key={p.id} party={p} operationId={operation.id} onRefresh={refreshDocs} />)}
+          {vendedores.map(p => <PartySection key={p.id} party={p} operationId={operation.id} onRefresh={refreshDocs} apoderadoName={apoderadoLabel} />)}
         </div>
       )}
       <div className="mt-4">
