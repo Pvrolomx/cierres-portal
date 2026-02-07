@@ -7,7 +7,7 @@ import {
 } from "@/types";
 import {
   getOperations, getProgress, findOperationByPin, isAdminPin,
-  uploadDocument, getPartyDocs, getGeneralDocs, getPartyProgress, ensureDocs, getSignedUrl,
+  uploadDocument, getPartyDocs, getGeneralDocs, getPartyProgress, ensureDocs, getSignedUrl, deleteDocumentFile,
 } from "@/lib/store";
 
 const LangContext = createContext<{ lang: Lang; toggle: () => void }>({ lang: "es", toggle: () => {} });
@@ -95,9 +95,10 @@ function PinEntry({ onAccess }: { onAccess: (op: Operation | "admin", alsoAdmin?
 }
 
 /* ─── Doc Row with real upload ─── */
-function DocRow({ doc, onUpload }: { doc: Document; onUpload: (id: string, file: File) => void }) {
+function DocRow({ doc, onUpload, onDelete }: { doc: Document; onUpload: (id: string, file: File) => void; onDelete: (id: string, path: string) => void }) {
   const { lang } = useLang();
   const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const hasFile = doc.archivo_url !== null;
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -115,21 +116,33 @@ function DocRow({ doc, onUpload }: { doc: Document; onUpload: (id: string, file:
     else alert(lang === 'es' ? 'Error al abrir archivo' : 'Error opening file');
   };
 
+  const handleDelete = async () => {
+    if (!doc.archivo_url) return;
+    setDeleting(true);
+    await onDelete(doc.id, doc.archivo_url);
+    setDeleting(false);
+  };
+
   return (
     <div className="flex items-center gap-3 py-3 px-4 border-b border-gray-100 last:border-0 hover:bg-gray-50/50 transition-colors">
       <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs flex-shrink-0 ${hasFile ? "bg-emerald-100 text-emerald-600" : "bg-red-50 text-red-400"}`}>
-        {hasFile ? "✓" : "○"}
+        {hasFile ? "\u2713" : "\u25cb"}
       </div>
       <div className="flex-1 min-w-0">
         <p className={`text-sm ${hasFile ? "text-gray-500 line-through" : "text-gray-900"}`}>{doc.nombre_doc[lang]}</p>
         {doc.fecha_subida && <p className="text-xs text-gray-400 mt-0.5">{new Date(doc.fecha_subida).toLocaleDateString(lang === "es" ? "es-MX" : "en-US")}</p>}
-
       </div>
       {hasFile ? (
-        <button onClick={handleView}
-          className="text-xs text-gray-500 hover:text-[#1e3a5f] px-3 py-1.5 rounded-lg border border-gray-200 hover:border-[#1e3a5f] transition-colors">
-          {t("view", lang)}
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={handleView}
+            className="text-xs text-gray-500 hover:text-[#1e3a5f] px-3 py-1.5 rounded-lg border border-gray-200 hover:border-[#1e3a5f] transition-colors">
+            {t("view", lang)}
+          </button>
+          <button onClick={handleDelete} disabled={deleting}
+            className="text-xs text-gray-400 hover:text-red-500 px-2 py-1.5 rounded-lg border border-gray-200 hover:border-red-300 transition-colors">
+            {deleting ? "..." : "\u2715"}
+          </button>
+        </div>
       ) : (
         <label className={`text-xs px-3 py-1.5 rounded-lg transition-colors shadow-sm cursor-pointer ${uploading ? "bg-gray-300 text-gray-500" : "bg-[#1e3a5f] hover:bg-[#2a4d7a] text-white"}`}>
           {uploading ? t("uploading", lang) : t("upload", lang)}
@@ -139,6 +152,7 @@ function DocRow({ doc, onUpload }: { doc: Document; onUpload: (id: string, file:
     </div>
   );
 }
+
 
 /* ─── Party Section ─── */
 function PartySection({ party, operationId, onRefresh }: { party: Party; operationId: string; onRefresh: () => void }) {
@@ -158,6 +172,12 @@ function PartySection({ party, operationId, onRefresh }: { party: Party; operati
 
   const handleUpload = async (docId: string, file: File) => {
     await uploadDocument(docId, file);
+    await loadDocs();
+    onRefresh();
+  };
+
+  const handleDelete = async (docId: string, path: string) => {
+    await deleteDocumentFile(docId, path);
     await loadDocs();
     onRefresh();
   };
@@ -185,14 +205,14 @@ function PartySection({ party, operationId, onRefresh }: { party: Party; operati
               <div className="px-5 py-2 bg-blue-50/50 border-b border-gray-100">
                 <span className="text-xs font-semibold text-[#1e3a5f]">🏢 {t("empresa", lang)}</span>
               </div>
-              {docs.filter(d => !d.nombre_doc.es.startsWith("(Apoderado)")).map(doc => <DocRow key={doc.id} doc={doc} onUpload={handleUpload} />)}
+              {docs.filter(d => !d.nombre_doc.es.startsWith("(Apoderado)")).map(doc => <DocRow key={doc.id} doc={doc} onUpload={handleUpload} onDelete={handleDelete} />)}
               <div className="px-5 py-2 bg-amber-50/50 border-b border-t border-gray-100">
                 <span className="text-xs font-semibold text-amber-700">👤 {t("apoderado", lang)}</span>
               </div>
-              {docs.filter(d => d.nombre_doc.es.startsWith("(Apoderado)")).map(doc => <DocRow key={doc.id} doc={doc} onUpload={handleUpload} />)}
+              {docs.filter(d => d.nombre_doc.es.startsWith("(Apoderado)")).map(doc => <DocRow key={doc.id} doc={doc} onUpload={handleUpload} onDelete={handleDelete} />)}
             </>
           ) : (
-            docs.map(doc => <DocRow key={doc.id} doc={doc} onUpload={handleUpload} />)
+            docs.map(doc => <DocRow key={doc.id} doc={doc} onUpload={handleUpload} onDelete={handleDelete} />)
           )}
         </div>
       )}
@@ -219,6 +239,12 @@ function GeneralSection({ operationId, categoria, onRefresh }: { operationId: st
     onRefresh();
   };
 
+  const handleDelete = async (docId: string, path: string) => {
+    await deleteDocumentFile(docId, path);
+    await loadDocs();
+    onRefresh();
+  };
+
   const completed = docs.filter(d => d.archivo_url !== null).length;
   const allDone = completed === docs.length && docs.length > 0;
 
@@ -232,7 +258,7 @@ function GeneralSection({ operationId, categoria, onRefresh }: { operationId: st
         </div>
         <span className={`text-gray-400 transition-transform text-xs ${open ? "rotate-180" : ""}`}>▼</span>
       </button>
-      {open && <div className="border-t border-gray-100">{docs.map(doc => <DocRow key={doc.id} doc={doc} onUpload={handleUpload} />)}</div>}
+      {open && <div className="border-t border-gray-100">{docs.map(doc => <DocRow key={doc.id} doc={doc} onUpload={handleUpload} onDelete={handleDelete} />)}</div>}
     </div>
   );
 }
@@ -282,15 +308,6 @@ function OperationDashboard({ operation, onLogout, isAdmin, onGoAdmin }: { opera
           <div className="absolute top-4 left-4"><LangToggle /></div>
           <span className="text-xs font-medium text-white/60 uppercase tracking-wider">{OPERATION_LABELS[operation.tipo][lang]}</span>
           <h1 className="text-3xl sm:text-5xl font-bold text-white mt-3 leading-tight">{operation.nombre}</h1>
-          <div className="mt-8 max-w-md mx-auto">
-            <div className="flex justify-between text-xs text-white/70 mb-2">
-              <span>{t("docs", lang)}</span>
-              <span className="font-semibold text-white">{progress.completed}/{progress.total} · {progress.percent}%</span>
-            </div>
-            <div className="h-2 bg-white/20 rounded-full overflow-hidden backdrop-blur-sm">
-              <div className="h-full bg-white rounded-full transition-all duration-700" style={{ width: `${progress.percent}%` }} />
-            </div>
-          </div>
         </div>
       </div>
 

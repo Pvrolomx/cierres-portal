@@ -26,7 +26,8 @@ export default function RootLayout({
               <p className="text-xs text-blue-200 tracking-wide">Expat Advisor MX</p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-blue-200">Expat Advisor MX</p>
+              <h1 className="text-xl font-bold tracking-tight">Rolo</h1>
+              <p className="text-xs text-blue-200 tracking-wide">Expat Advisor MX</p>
             </div>
           </div>
         </header>

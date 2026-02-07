@@ -170,6 +170,21 @@ export async function getSignedUrl(storagePath: string): Promise<string | null> 
   return data.signedUrl;
 }
 
+// Delete uploaded file from storage and clear the document record
+export async function deleteDocumentFile(docId: string, storagePath: string): Promise<boolean> {
+  if (!supabase) return false;
+  // Remove file from storage
+  await supabase.storage.from('cierres-docs').remove([storagePath]);
+  // Clear the file reference in the DB
+  const { error } = await supabase.from('documentos').update({
+    archivo_url: null,
+    subido_por: null,
+    fecha_subida: null,
+  }).eq('id', docId);
+  if (error) { console.error('Delete doc error:', error); return false; }
+  return true;
+}
+
 function mapDoc(d: { id: string; operacion_id: string; party_id: string | null; categoria: string | null; nombre_doc_es: string; nombre_doc_en: string; requerido: boolean; archivo_url: string | null; subido_por: string | null; fecha_subida: string | null }): Document {
   return {
     id: d.id,
