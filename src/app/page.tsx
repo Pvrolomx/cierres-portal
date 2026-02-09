@@ -364,16 +364,19 @@ function OperationDashboard({ operation, onLogout, isAdmin, onGoAdmin }: { opera
   const notarioNames: Record<string, string> = {
     "Artisan 201": "Notaría 10 PV",
     "Naarena 203": "Notaría 29 Bucerias",
+    "Naarena 303": "Notaría 29 Bucerias",
   };
   const notarioLabel = notarioNames[operation.nombre];
 
   const apoderadoNames: Record<string, string> = {
     "Naarena 203": "Apoderado: Sergio Arturo Miramontes Macias",
+    "Naarena 303": "Apoderado: Sergio Arturo Miramontes Macias",
   };
   const apoderadoLabel = apoderadoNames[operation.nombre];
 
   const vendedorApoderadoNames: Record<string, string> = {
     "Naarena 203": "Apoderado: Enrique Miguel Tejeda Guillemin",
+    "Naarena 303": "Apoderado: Enrique Miguel Tejeda Guillemin",
   };
   const vendedorApoderadoLabel = vendedorApoderadoNames[operation.nombre];
 
