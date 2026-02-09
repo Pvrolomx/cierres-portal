@@ -7,7 +7,7 @@ import {
 } from "@/types";
 import {
   getOperations, getProgress, findOperationByPin, isAdminPin,
-  uploadDocument, getPartyDocs, getGeneralDocs, getPartyProgress, ensureDocs, getSignedUrl, deleteDocumentFile,
+  uploadDocument, getPartyDocs, getGeneralDocs, getPartyProgress, ensureDocs, getSignedUrl, deleteDocumentFile, updateNota,
 } from "@/lib/store";
 
 const LangContext = createContext<{ lang: Lang; toggle: () => void }>({ lang: "es", toggle: () => {} });
@@ -95,10 +95,12 @@ function PinEntry({ onAccess }: { onAccess: (op: Operation | "admin", alsoAdmin?
 }
 
 /* ─── Doc Row with real upload ─── */
-function DocRow({ doc, onUpload, onDelete }: { doc: Document; onUpload: (id: string, file: File) => void; onDelete: (id: string, path: string) => void }) {
+function DocRow({ doc, onUpload, onDelete, onRefresh }: { doc: Document; onUpload: (id: string, file: File) => void; onDelete: (id: string, path: string) => void; onRefresh?: () => void }) {
   const { lang } = useLang();
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [editingNota, setEditingNota] = useState(false);
+  const [notaText, setNotaText] = useState(doc.nota || "");
   const hasFile = doc.archivo_url !== null;
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -123,31 +125,67 @@ function DocRow({ doc, onUpload, onDelete }: { doc: Document; onUpload: (id: str
     setDeleting(false);
   };
 
+  const handleSaveNota = async () => {
+    await updateNota(doc.id, notaText.trim() || null);
+    doc.nota = notaText.trim() || null;
+    setEditingNota(false);
+    if (onRefresh) onRefresh();
+  };
+
   return (
-    <div className="flex items-center gap-3 py-3 px-4 border-b border-gray-100 last:border-0 hover:bg-gray-50/50 transition-colors">
-      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs flex-shrink-0 ${hasFile ? "bg-emerald-100 text-emerald-600" : "bg-red-50 text-red-400"}`}>
-        {hasFile ? "\u2713" : "\u25cb"}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className={`text-sm ${hasFile ? "text-gray-500 line-through" : "text-gray-900"}`}>{doc.nombre_doc[lang]}</p>
-        {doc.fecha_subida && <p className="text-xs text-gray-400 mt-0.5">{new Date(doc.fecha_subida).toLocaleDateString(lang === "es" ? "es-MX" : "en-US")}</p>}
-      </div>
-      {hasFile ? (
+    <div className="py-3 px-4 border-b border-gray-100 last:border-0 hover:bg-gray-50/50 transition-colors">
+      <div className="flex items-center gap-3">
+        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs flex-shrink-0 ${hasFile ? "bg-emerald-100 text-emerald-600" : "bg-red-50 text-red-400"}`}>
+          {hasFile ? "\u2713" : "\u25cb"}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className={`text-sm ${hasFile ? "text-gray-500 line-through" : "text-gray-900"}`}>{doc.nombre_doc[lang]}</p>
+          {doc.fecha_subida && <p className="text-xs text-gray-400 mt-0.5">{new Date(doc.fecha_subida).toLocaleDateString(lang === "es" ? "es-MX" : "en-US")}</p>}
+        </div>
         <div className="flex items-center gap-2">
-          <button onClick={handleView}
-            className="text-xs text-gray-500 hover:text-[#1e3a5f] px-3 py-1.5 rounded-lg border border-gray-200 hover:border-[#1e3a5f] transition-colors">
-            {t("view", lang)}
-          </button>
-          <button onClick={handleDelete} disabled={deleting}
-            className="text-xs text-gray-400 hover:text-red-500 px-2 py-1.5 rounded-lg border border-gray-200 hover:border-red-300 transition-colors">
-            {deleting ? "..." : "\u2715"}
+          {hasFile ? (
+            <>
+              <button onClick={handleView}
+                className="text-xs text-gray-500 hover:text-[#1e3a5f] px-3 py-1.5 rounded-lg border border-gray-200 hover:border-[#1e3a5f] transition-colors">
+                {t("view", lang)}
+              </button>
+              <button onClick={handleDelete} disabled={deleting}
+                className="text-xs text-gray-400 hover:text-red-500 px-2 py-1.5 rounded-lg border border-gray-200 hover:border-red-300 transition-colors">
+                {deleting ? "..." : "\u2715"}
+              </button>
+            </>
+          ) : (
+            <label className={`text-xs px-3 py-1.5 rounded-lg transition-colors shadow-sm cursor-pointer ${uploading ? "bg-gray-300 text-gray-500" : "bg-[#1e3a5f] hover:bg-[#2a4d7a] text-white"}`}>
+              {uploading ? t("uploading", lang) : t("upload", lang)}
+              <input type="file" className="hidden" onChange={handleFileSelect} disabled={uploading} />
+            </label>
+          )}
+          <button onClick={() => { setNotaText(doc.nota || ""); setEditingNota(!editingNota); }}
+            className={`text-xs px-2 py-1.5 rounded-lg border transition-colors ${doc.nota ? "border-amber-300 text-amber-600 bg-amber-50 hover:bg-amber-100" : "border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300"}`}
+            title={lang === "es" ? "Nota" : "Note"}>
+            {doc.nota ? "\u270e" : "\u002b"}
           </button>
         </div>
-      ) : (
-        <label className={`text-xs px-3 py-1.5 rounded-lg transition-colors shadow-sm cursor-pointer ${uploading ? "bg-gray-300 text-gray-500" : "bg-[#1e3a5f] hover:bg-[#2a4d7a] text-white"}`}>
-          {uploading ? t("uploading", lang) : t("upload", lang)}
-          <input type="file" className="hidden" onChange={handleFileSelect} disabled={uploading} />
-        </label>
+      </div>
+      {doc.nota && !editingNota && (
+        <div className="ml-10 mt-1.5 text-xs text-amber-700 bg-amber-50 px-2.5 py-1.5 rounded-md border border-amber-200">
+          {doc.nota}
+        </div>
+      )}
+      {editingNota && (
+        <div className="ml-10 mt-2 flex gap-2">
+          <input type="text" value={notaText} onChange={(e) => setNotaText(e.target.value)}
+            placeholder={lang === "es" ? "Ej: Falta firmar..." : "E.g. Needs signature..."}
+            className="flex-1 text-xs px-3 py-1.5 border border-gray-200 rounded-lg focus:border-[#1e3a5f] focus:ring-1 focus:ring-[#1e3a5f]/20 outline-none"
+            onKeyDown={(e) => { if (e.key === "Enter") handleSaveNota(); if (e.key === "Escape") setEditingNota(false); }}
+            autoFocus />
+          <button onClick={handleSaveNota} className="text-xs px-3 py-1.5 bg-[#1e3a5f] text-white rounded-lg hover:bg-[#2a4d7a]">
+            {lang === "es" ? "OK" : "OK"}
+          </button>
+          <button onClick={() => setEditingNota(false)} className="text-xs px-2 py-1.5 text-gray-400 hover:text-gray-600">
+            {"\u2715"}
+          </button>
+        </div>
       )}
     </div>
   );
