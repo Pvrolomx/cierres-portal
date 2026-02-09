@@ -113,7 +113,28 @@ export async function ensureDocs(operation: Operation): Promise<void> {
 export async function getPartyDocs(operationId: string, partyId: string): Promise<Document[]> {
   if (!supabase) return [];
   const { data } = await supabase.from('documentos').select('*').eq('operacion_id', operationId).eq('party_id', partyId);
-  return (data || []).map(mapDoc);
+  const docs = (data || []).map(mapDoc);
+  const sortOrder = (d: Document) => {
+    const name = d.nombre_doc.es.replace('(Apoderado) ', '');
+    if (name === 'Identificación Oficial 1') return 0;
+    if (name === 'Identificación Oficial 2') return 1;
+    if (name.includes('Forma migratoria')) return 2;
+    if (name === 'CURP') return 3;
+    if (name.includes('RFC') || name.includes('Cédula Fiscal')) return 4;
+    if (name.includes('Comprobante domicilio')) return 5;
+    if (name.includes('Acta de Nacimiento')) return 6;
+    if (name.includes('Acta de Matrimonio')) return 7;
+    if (name.includes('KYC')) return 8;
+    if (name.includes('Forma de pago')) return 9;
+    if (name.includes('Designación')) return 10;
+    if (name.includes('Acta Constitutiva')) return 0;
+    if (name.includes('Comprobante domicilio fiscal')) return 1;
+    if (name.includes('Poder Notarial')) return 90;
+    if (name.includes('Documentos adicionales')) return 99;
+    return 50;
+  };
+  docs.sort((a, b) => sortOrder(a) - sortOrder(b));
+  return docs;
 }
 
 export async function getGeneralDocs(operationId: string, categoria: DocCategory): Promise<Document[]> {
