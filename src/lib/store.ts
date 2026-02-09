@@ -211,7 +211,12 @@ export async function deleteDocumentFile(docId: string, storagePath: string): Pr
   return true;
 }
 
-function mapDoc(d: { id: string; operacion_id: string; party_id: string | null; categoria: string | null; nombre_doc_es: string; nombre_doc_en: string; requerido: boolean; archivo_url: string | null; subido_por: string | null; fecha_subida: string | null }): Document {
+export async function updateNota(docId: string, nota: string | null): Promise<void> {
+  if (!supabase) return;
+  await supabase.from('documentos').update({ nota: nota || null }).eq('id', docId);
+}
+
+function mapDoc(d: { id: string; operacion_id: string; party_id: string | null; categoria: string | null; nombre_doc_es: string; nombre_doc_en: string; requerido: boolean; archivo_url: string | null; subido_por: string | null; fecha_subida: string | null; nota?: string | null }): Document {
   return {
     id: d.id,
     operacion_id: d.operacion_id,
@@ -222,5 +227,6 @@ function mapDoc(d: { id: string; operacion_id: string; party_id: string | null; 
     archivo_url: d.archivo_url,
     subido_por: d.subido_por,
     fecha_subida: d.fecha_subida,
+    nota: d.nota || null,
   };
 }
