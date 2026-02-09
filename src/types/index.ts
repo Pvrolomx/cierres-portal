@@ -68,6 +68,7 @@ export interface Document {
   archivo_url: string | null;
   subido_por: string | null;
   fecha_subida: string | null;
+  nota: string | null;
 }
 
 // Docs for Persona Física
