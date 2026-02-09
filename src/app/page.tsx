@@ -288,11 +288,19 @@ function ApoderadoSection({ operationId, partyId, name, onRefresh }: { operation
   const loadDocs = useCallback(async () => {
     const allDocs = await getPartyDocs(operationId, partyId);
     const apodDocs = allDocs.filter(d => d.nombre_doc.es.startsWith("(Apoderado)"));
-    // Sort: Poder Notarial and Documentos adicionales go last
+    // Sort: same order as party docs (IO1, IO2, CURP, etc.) with Poder Notarial and Docs adicionales last
     const sortOrder = (d: Document) => {
-      if (d.nombre_doc.es.includes("Poder Notarial")) return 98;
-      if (d.nombre_doc.es.includes("Documentos adicionales")) return 99;
-      return 0;
+      const name = d.nombre_doc.es.replace('(Apoderado) ', '');
+      if (name === 'Identificación Oficial 1') return 0;
+      if (name === 'Identificación Oficial 2') return 1;
+      if (name === 'CURP') return 3;
+      if (name.includes('RFC') || name.includes('Cédula Fiscal')) return 4;
+      if (name.includes('Comprobante domicilio')) return 5;
+      if (name.includes('Acta de Matrimonio')) return 7;
+      if (name.includes('KYC')) return 8;
+      if (name.includes('Poder Notarial')) return 98;
+      if (name.includes('Documentos adicionales')) return 99;
+      return 50;
     };
     apodDocs.sort((a, b) => sortOrder(a) - sortOrder(b));
     setDocs(apodDocs);
