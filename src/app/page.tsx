@@ -103,11 +103,64 @@ function DocRow({ doc, onUpload, onDelete, onRefresh }: { doc: Document; onUploa
   const [notaText, setNotaText] = useState(doc.nota || "");
   const hasFile = doc.archivo_url !== null;
 
+  const isIdDoc = (() => {
+    const name = doc.nombre_doc.es.replace("(Apoderado) ", "");
+    return name === "Identificación Oficial 1" || name === "Identificación Oficial 2" || name === "Pasaporte vigente / INE";
+  })();
+
+  const readFileAsDataURL = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(r.result as string); r.onerror = reject; r.readAsDataURL(file); });
+
+  const loadImage = (src: string): Promise<HTMLImageElement> =>
+    new Promise((resolve, reject) => { const img = new Image(); img.onload = () => resolve(img); img.onerror = reject; img.src = src; });
+
+  const createIdPdf = async (files: File[]): Promise<File> => {
+    const { jsPDF } = await import("jspdf");
+    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "letter" });
+    const pageW = 215.9, pageH = 279.4;
+    const cardW = 85.6, cardH = 54.0;
+    const scale = 2.0;
+    const printW = cardW * scale, printH = cardH * scale;
+    const x = (pageW - printW) / 2;
+
+    for (let i = 0; i < Math.min(files.length, 2); i++) {
+      const dataUrl = await readFileAsDataURL(files[i]);
+      const img = await loadImage(dataUrl);
+      const fmt = files[i].type.includes("png") ? "PNG" : "JPEG";
+      const label = i === 0
+        ? (lang === "es" ? "Frente" : "Front")
+        : (lang === "es" ? "Reverso" : "Back");
+      const yLabel = i === 0 ? 20 : 20 + printH + 25;
+      const yImg = yLabel + 6;
+      pdf.setFontSize(11);
+      pdf.setTextColor(100);
+      pdf.text(label, x, yLabel);
+      pdf.addImage(dataUrl, fmt, x, yImg, printW, printH);
+      pdf.setDrawColor(200);
+      pdf.rect(x, yImg, printW, printH);
+    }
+
+    const blob = pdf.output("blob");
+    return new File([blob], "identificacion.pdf", { type: "application/pdf" });
+  };
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
     setUploading(true);
-    await onUpload(doc.id, file);
+    try {
+      if (isIdDoc && files.length >= 2) {
+        const pdfFile = await createIdPdf(Array.from(files));
+        await onUpload(doc.id, pdfFile);
+      } else if (isIdDoc && files.length === 1) {
+        const pdfFile = await createIdPdf(Array.from(files));
+        await onUpload(doc.id, pdfFile);
+      } else {
+        await onUpload(doc.id, files[0]);
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
+    }
     setUploading(false);
   };
 
@@ -156,8 +209,9 @@ function DocRow({ doc, onUpload, onDelete, onRefresh }: { doc: Document; onUploa
             </>
           ) : (
             <label className={`text-xs px-3 py-1.5 rounded-lg transition-colors shadow-sm cursor-pointer ${uploading ? "bg-gray-300 text-gray-500" : "bg-[#1e3a5f] hover:bg-[#2a4d7a] text-white"}`}>
-              {uploading ? t("uploading", lang) : t("upload", lang)}
-              <input type="file" className="hidden" onChange={handleFileSelect} disabled={uploading} />
+              {uploading ? t("uploading", lang) : isIdDoc ? (lang === "es" ? "Subir frente y reverso" : "Upload front & back") : t("upload", lang)}
+              <input type="file" className="hidden" onChange={handleFileSelect} disabled={uploading}
+                {...(isIdDoc ? { multiple: true, accept: "image/*" } : {})} />
             </label>
           )}
           <button onClick={() => { setNotaText(doc.nota || ""); setEditingNota(!editingNota); }}
