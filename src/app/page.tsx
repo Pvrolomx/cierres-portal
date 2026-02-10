@@ -162,7 +162,7 @@ function DocRow({ doc, onUpload, onDelete, onRefresh }: { doc: Document; onUploa
           )}
           <button onClick={() => { setNotaText(doc.nota || ""); setEditingNota(!editingNota); }}
             className={`text-xs px-2 py-1.5 rounded-lg border transition-colors ${doc.nota ? "border-amber-300 text-amber-600 bg-amber-50 hover:bg-amber-100" : "border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300"}`}
-            title={lang === "es" ? "Nota" : "Note"}>
+            title={doc.nota ? (lang === "es" ? "Actualizar" : "Update") : (lang === "es" ? "Nota" : "Note")}>
             {doc.nota ? "\u270e" : "\u002b"}
           </button>
         </div>
