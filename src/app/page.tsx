@@ -99,8 +99,6 @@ function DocRow({ doc, onUpload, onDelete, onRefresh }: { doc: Document; onUploa
   const { lang } = useLang();
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [editingNota, setEditingNota] = useState(false);
-  const [notaText, setNotaText] = useState(doc.nota || "");
   const hasFile = doc.archivo_url !== null;
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -125,10 +123,15 @@ function DocRow({ doc, onUpload, onDelete, onRefresh }: { doc: Document; onUploa
     setDeleting(false);
   };
 
-  const handleSaveNota = async () => {
-    await updateNota(doc.id, notaText.trim() || null);
-    doc.nota = notaText.trim() || null;
-    setEditingNota(false);
+  const handleNotaClick = async () => {
+    const promptMsg = doc.nota
+      ? (lang === "es" ? "Actualizar nota:" : "Update note:")
+      : (lang === "es" ? "Agregar nota:" : "Add note:");
+    const result = window.prompt(promptMsg, doc.nota || "");
+    if (result === null) return; // cancelled
+    const trimmed = result.trim() || null;
+    await updateNota(doc.id, trimmed);
+    doc.nota = trimmed;
     if (onRefresh) onRefresh();
   };
 
@@ -160,31 +163,16 @@ function DocRow({ doc, onUpload, onDelete, onRefresh }: { doc: Document; onUploa
               <input type="file" className="hidden" onChange={handleFileSelect} disabled={uploading} />
             </label>
           )}
-          <button onClick={() => { setNotaText(doc.nota || ""); setEditingNota(!editingNota); }}
+          <button onClick={handleNotaClick}
             className={`text-xs px-2 py-1.5 rounded-lg border transition-colors ${doc.nota ? "border-amber-300 text-amber-600 bg-amber-50 hover:bg-amber-100" : "border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300"}`}
             title={doc.nota ? (lang === "es" ? "Actualizar" : "Update") : (lang === "es" ? "Nota" : "Note")}>
             {doc.nota ? "\u270e" : "\u002b"}
           </button>
         </div>
       </div>
-      {doc.nota && !editingNota && (
+      {doc.nota && (
         <div className="ml-10 mt-1.5 text-xs text-amber-700 bg-amber-50 px-2.5 py-1.5 rounded-md border border-amber-200">
           {doc.nota}
-        </div>
-      )}
-      {editingNota && (
-        <div className="ml-10 mt-2 flex gap-2">
-          <input type="text" value={notaText} onChange={(e) => setNotaText(e.target.value)}
-            placeholder={lang === "es" ? "Ej: Falta firmar..." : "E.g. Needs signature..."}
-            className="flex-1 text-xs px-3 py-1.5 border border-gray-200 rounded-lg focus:border-[#1e3a5f] focus:ring-1 focus:ring-[#1e3a5f]/20 outline-none"
-            onKeyDown={(e) => { if (e.key === "Enter") handleSaveNota(); if (e.key === "Escape") setEditingNota(false); }}
-            autoFocus />
-          <button onClick={handleSaveNota} className="text-xs px-3 py-1.5 bg-[#1e3a5f] text-white rounded-lg hover:bg-[#2a4d7a]">
-            {lang === "es" ? "OK" : "OK"}
-          </button>
-          <button onClick={() => setEditingNota(false)} className="text-xs px-2 py-1.5 text-gray-400 hover:text-gray-600">
-            {"\u2715"}
-          </button>
         </div>
       )}
     </div>
