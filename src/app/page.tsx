@@ -123,15 +123,10 @@ function DocRow({ doc, onUpload, onDelete, onRefresh }: { doc: Document; onUploa
     setDeleting(false);
   };
 
-  const handleNotaClick = async () => {
-    const promptMsg = doc.nota
-      ? (lang === "es" ? "Actualizar nota:" : "Update note:")
-      : (lang === "es" ? "Agregar nota:" : "Add note:");
-    const result = window.prompt(promptMsg, doc.nota || "");
-    if (result === null) return; // cancelled
-    const trimmed = result.trim() || null;
-    await updateNota(doc.id, trimmed);
-    doc.nota = trimmed;
+  const handleNotaToggle = async () => {
+    const newNota = doc.nota ? null : "1";
+    await updateNota(doc.id, newNota);
+    doc.nota = newNota;
     if (onRefresh) onRefresh();
   };
 
@@ -163,18 +158,13 @@ function DocRow({ doc, onUpload, onDelete, onRefresh }: { doc: Document; onUploa
               <input type="file" className="hidden" onChange={handleFileSelect} disabled={uploading} />
             </label>
           )}
-          <button onClick={handleNotaClick}
+          <button onClick={handleNotaToggle}
             className={`text-xs px-2 py-1.5 rounded-lg border transition-colors ${doc.nota ? "border-amber-300 text-amber-600 bg-amber-50 hover:bg-amber-100" : "border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300"}`}
             title={doc.nota ? (lang === "es" ? "Actualizar" : "Update") : (lang === "es" ? "Nota" : "Note")}>
             {doc.nota ? "\u270e" : "\u002b"}
           </button>
         </div>
       </div>
-      {doc.nota && (
-        <div className="ml-10 mt-1.5 text-xs text-amber-700 bg-amber-50 px-2.5 py-1.5 rounded-md border border-amber-200">
-          {doc.nota}
-        </div>
-      )}
     </div>
   );
 }
