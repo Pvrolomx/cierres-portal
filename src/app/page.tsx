@@ -386,7 +386,7 @@ function OperationDashboard({ operation, onLogout, isAdmin, onGoAdmin }: { opera
   if (!ready) return <div className="text-center py-20 text-gray-400">{t("loading", lang)}</div>;
 
   const notarioNames: Record<string, string> = {
-    "Artisan 201": "Notaría 10 PV",
+    "Artisan 201": "Notaría 29 Bucerias",
     "Naarena 203": "Notaría 29 Bucerias",
     "Naarena 303": "Notaría 29 Bucerias",
   };
