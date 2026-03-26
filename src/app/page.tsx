@@ -533,11 +533,24 @@ export default function Home() {
   };
   const handleLogout = () => { setView("pin"); setActiveOp(null); setIsAdmin(false); };
 
+  const handleFooterAdmin = () => {
+    const pin = window.prompt("");
+    if (pin && pin === "143414") {
+      setIsAdmin(true);
+      setView("admin");
+    }
+  };
+
   return (
     <LangContext.Provider value={{ lang, toggle: toggleLang }}>
       {view === "pin" && <div className="relative"><div className="absolute top-0 right-0"><LangToggle /></div><PinEntry onAccess={handleAccess} /></div>}
       {view === "admin" && <AdminPanel onSelect={op => { setActiveOp(op); setView("operation"); }} onLogout={handleLogout} />}
       {view === "operation" && activeOp && <OperationDashboard operation={activeOp} onLogout={handleLogout} isAdmin={isAdmin} onGoAdmin={() => setView("admin")} />}
+      <footer className="mt-12 border-t border-gray-200 bg-white">
+        <div className="max-w-6xl mx-auto px-4 py-4 text-center text-xs text-gray-400">
+          Hecho por Colmena <button onClick={handleFooterAdmin} className="text-gray-400 hover:text-gray-500 transition-colors cursor-default">2026</button>
+        </div>
+      </footer>
     </LangContext.Provider>
   );
 }
