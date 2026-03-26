@@ -34,11 +34,6 @@ export default function RootLayout({
         <main className="max-w-6xl mx-auto px-4 py-6">
           {children}
         </main>
-        <footer className="mt-12 border-t border-gray-200 bg-white">
-          <div className="max-w-6xl mx-auto px-4 py-4 text-center text-xs text-gray-400">
-            Hecho por Colmena 2026
-          </div>
-        </footer>
       </body>
     </html>
   );
