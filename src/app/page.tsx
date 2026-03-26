@@ -520,11 +520,15 @@ function AdminPanel({ onSelect, onLogout }: { onSelect: (op: Operation) => void;
 }
 
 /* ─── Main ─── */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let deferredPrompt: any = null;
+
 export default function Home() {
   const [view, setView] = useState<"pin" | "admin" | "operation">("pin");
   const [activeOp, setActiveOp] = useState<Operation | null>(null);
   const [lang, setLang] = useState<Lang>("es");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [canInstall, setCanInstall] = useState(false);
   const toggleLang = () => setLang(l => l === "es" ? "en" : "es");
   const handleAccess = (result: Operation | "admin", alsoAdmin?: boolean) => {
     if (alsoAdmin) setIsAdmin(true);
@@ -532,6 +536,29 @@ export default function Home() {
     else { setActiveOp(result); setView("operation"); }
   };
   const handleLogout = () => { setView("pin"); setActiveOp(null); setIsAdmin(false); };
+
+  useEffect(() => {
+    // Register service worker
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+    // Capture install prompt
+    const handler = (e: Event) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      setCanInstall(true);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const result = await deferredPrompt.userChoice;
+    if (result.outcome === "accepted") setCanInstall(false);
+    deferredPrompt = null;
+  };
 
   const handleFooterAdmin = () => {
     const pin = window.prompt("");
@@ -543,6 +570,14 @@ export default function Home() {
 
   return (
     <LangContext.Provider value={{ lang, toggle: toggleLang }}>
+      {canInstall && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50">
+          <button onClick={handleInstall}
+            className="flex items-center gap-2 bg-[#1e3a5f] text-white text-sm font-medium px-5 py-2.5 rounded-full shadow-lg hover:bg-[#2a4d7a] transition-all">
+            <span>📲</span> {lang === "es" ? "Instalar App" : "Install App"}
+          </button>
+        </div>
+      )}
       {view === "pin" && <div className="relative"><div className="absolute top-0 right-0"><LangToggle /></div><PinEntry onAccess={handleAccess} /></div>}
       {view === "admin" && <AdminPanel onSelect={op => { setActiveOp(op); setView("operation"); }} onLogout={handleLogout} />}
       {view === "operation" && activeOp && <OperationDashboard operation={activeOp} onLogout={handleLogout} isAdmin={isAdmin} onGoAdmin={() => setView("admin")} />}
